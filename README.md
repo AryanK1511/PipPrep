@@ -1,6 +1,6 @@
-# Readline
+# PipPrep
 
-Readline is an independent CELPIP-General Reading practice app. Take a 38-question mock or drill a single part, then review the evidence behind each answer. The starter mock works without AI credentials.
+PipPrep is an independent CELPIP-General practice app. Reading is the first skill available. Take a 38-question mock or drill a single part, then review the evidence behind each answer. The starter mock works without AI credentials.
 
 ## Run locally
 
@@ -11,11 +11,11 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open [Readline](http://127.0.0.1:4175).
+Open [PipPrep](http://127.0.0.1:4175).
 
 Choose timed or untimed practice. In a timed attempt, the server keeps the deadline even if you close the tab. Answers, completed attempts, and coaching are saved in SQLite. The browser uses a private cookie to reopen its study record. Keep using the same browser and address to access that record.
 
-For a fresh test and coaching, install the Codex CLI and sign in with `codex login`. Start Readline from a terminal that can run `codex`. Codex receives the generated practice material and submitted answers needed for coaching. Your Codex account's usage limits apply. If a generated mock fails, retry the same settings within 15 minutes to reuse the parts that already passed validation.
+For a fresh test and coaching, install the Codex CLI and sign in with `codex login`. Start PipPrep from a terminal that can run `codex`. Codex receives the generated practice material and submitted answers needed for coaching. Your Codex account's usage limits apply. If a generated mock fails, retry the same settings within 15 minutes to reuse the parts that already passed validation.
 
 ## Build and run
 
@@ -30,7 +30,7 @@ HOST=127.0.0.1 PORT=4175 pnpm start
 | `READLINE_AI=off` | Runs starter practice and answer review with AI disabled. |
 | `READLINE_CODEX` | Path to a Codex executable. Defaults to `codex` on your PATH. |
 | `READLINE_MODEL` | Optional model override for Codex. |
-| `READLINE_ORIGIN` | Canonical origin for deployments behind a proxy, such as `https://readline.example.org`. |
+| `READLINE_ORIGIN` | Canonical origin for deployments behind a proxy, such as `https://pipprep.example.org`. |
 
 For self-hosting, set `READLINE_ORIGIN` to the public address and run the Node build with a persistent volume for SQLite. Use `READLINE_AI=off` on a public instance until you have a hosted AI provider and an access policy for model usage. The current Codex integration is intended for personal use.
 

@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 import { BackToReading, Shell } from '../components/Shell'
 import { Icon } from '../components/Icon'
+import { JobProgress } from '../components/JobProgress'
+import { readJob } from '../lib/progress'
+import type { CoachStage } from '../lib/progress'
 import { Source } from '../components/Source'
 import { PARTS, SKILLS, markAttempt, optionsFor, promptFor, referenceBands } from '../lib/reading'
 import type { Attempt, Coaching, Part } from '../lib/types'
@@ -82,19 +85,26 @@ function ReviewItem({ part, item }: { part: Part; item: ReturnType<typeof markAt
   </details>
 }
 
+const COACH_STEPS = [
+  { stage: 'reviewing', label: 'Review your answers', active: 'Comparing answers, skills, and timing' },
+  { stage: 'drafting', label: 'Write your coaching notes', active: 'Looking for patterns and building drills' },
+  { stage: 'saving', label: 'Save your feedback', active: 'Saving to your attempt' },
+] as const
+
 function Coach({ attempt, enabled }: { attempt: Attempt; enabled: boolean }) {
   const [feedback, setFeedback] = useState<Coaching | undefined>(attempt.coach)
   const [busy, setBusy] = useState(enabled && !attempt.coach)
   const [error, setError] = useState('')
+  const [stage, setStage] = useState<CoachStage | null>(null)
   const started = useRef(false)
 
   async function fetchFeedback() {
     setBusy(true)
     setError('')
+    setStage(null)
     try {
-      const result = await requestCoaching({ data: attempt.id })
-      if (!result.feedback) throw new Error(result.error)
-      setFeedback(result.feedback)
+      const response = await requestCoaching({ data: attempt.id })
+      setFeedback(await readJob<CoachStage, Coaching>(response, setStage))
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : 'Please try again.')
     } finally { setBusy(false) }
@@ -107,10 +117,25 @@ function Coach({ attempt, enabled }: { attempt: Attempt; enabled: boolean }) {
     }
   }, [enabled, attempt.id])
 
-  return <div id="coach" aria-live="polite">
-    {feedback ? <><p>{feedback.summary}</p><ul className="coach-actions">{feedback.actions.map(action => <li key={action.title}><strong>{action.title}</strong><span>{action.advice}</span></li>)}</ul></>
-      : busy ? <p>Preparing coaching. You can review every answer while it loads.</p>
-      : enabled ? <><p>{error}</p><button className="button secondary" onClick={() => void fetchFeedback()}>Retry AI feedback</button></>
+  const current = COACH_STEPS.findIndex(step => step.stage === stage)
+  return <div id="coach">
+    {feedback ? <>
+      <p>{feedback.summary}</p>
+      {(feedback.patterns || feedback.gaps || feedback.priority) && <div className="coach-insights">
+        {([
+          ['Patterns in your answers', feedback.patterns],
+          ['Clues to look for', feedback.gaps],
+          ['What to work on first', feedback.priority],
+        ] as const).map(([title, copy]) => copy && <div key={title}><h3>{title}</h3><p>{copy}</p></div>)}
+      </div>}
+      <h3 className="coach-practice">Try this in your next practice</h3>
+      <ol className="coach-actions">{feedback.actions.map((action, i) => <li key={i}><strong>{action.title}</strong><span>{action.advice}</span></li>)}</ol>
+    </>
+      : busy ? <JobProgress title="Preparing your feedback" detail="You can review your answers below while the coach works."
+        steps={COACH_STEPS.map((step, i) => ({
+          label: step.label, status: i < current ? 'Done' : i === current ? step.active : 'Queued', done: i < current,
+        }))} />
+      : enabled ? <><p role="alert">{error}</p><button className="button secondary" onClick={() => void fetchFeedback()}>Retry AI feedback</button></>
       : <p>A signed-in Codex CLI enables personalised coaching. The answer review is available below.</p>}
   </div>
 }

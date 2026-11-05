@@ -1,8 +1,10 @@
 import { createServerFn } from '@tanstack/react-start'
 import { getCookie, getRequest, setCookie, setResponseHeader } from '@tanstack/react-start/server'
 import { z } from 'zod'
-import type { Exam, Part, PartIndex } from '../lib/types.ts'
+import type { Coaching, Exam, Part, PartIndex } from '../lib/types.ts'
 import { generateCoach, generatePart, ProviderError, providerAvailable } from './ai.server.js'
+import type { CoachStage, ExamUpdate } from '../lib/progress.ts'
+import { streamJob } from './progress.server.ts'
 import * as store from './store.server.ts'
 
 const id = z.uuid()
@@ -23,7 +25,7 @@ function origin() {
     throw new Error('Set READLINE_ORIGIN to the public address before accepting changes.')
   }
   const expected = configured || url.origin
-  if (request.headers.get('origin') !== expected) throw new Error('Open Readline directly to make changes.')
+  if (request.headers.get('origin') !== expected) throw new Error('Open PipPrep directly to make changes.')
   return expected
 }
 
@@ -39,7 +41,7 @@ function ensureOwner(expected: string) {
 
 function requireOwner() {
   const key = owner()
-  if (!key) throw new Error('Your Readline session has expired.')
+  if (!key) throw new Error('Your PipPrep session has expired.')
   return key
 }
 
@@ -119,58 +121,66 @@ function rememberDraft(key: string, parts: Map<PartIndex, Part>) {
 }
 export const newExam = createServerFn({ method: 'POST' })
   .validator(z.object({ part: scope, difficulty: z.enum(['standard', 'challenge']) }))
-  .handler(async ({ data }) => {
+  .handler(({ data }) => {
     const key = ensureOwner(origin())
-    if (process.env.READLINE_AI === 'off') return { error: 'AI is switched off for this Readline server.' }
-    if (generating.has(key) || generating.size >= 2) return { error: 'A test is already generating. Please try again in a moment.' }
-    generating.add(key)
-    const draftKey = JSON.stringify([key, data.part, data.difficulty])
-    const prior = drafts.get(draftKey)
-    drafts.delete(draftKey)
-    const completed = prior && prior.expiresAt > Date.now() ? prior.parts : new Map<PartIndex, Part>()
-    try {
-      const indices: PartIndex[] = data.part === 'all' ? [0, 1, 2, 3] : [data.part]
-      const signal = getRequest().signal
-      const outcomes = await Promise.allSettled(indices.filter(index => !completed.has(index)).map(async index => {
-        const part = await generatePart(index, data.difficulty, store.recentTitles(key, index), signal)
-        completed.set(index, part)
-      }))
-      const failed = outcomes.find(outcome => outcome.status === 'rejected')
-      if (failed) throw failed.reason
-      const parts = indices.map(index => completed.get(index)!)
-      const title = parts.length === 1 ? parts[0].title : `Reading mock · ${data.difficulty === 'challenge' ? 'Challenge' : 'Standard'}`
-      const exam: Exam = { id: crypto.randomUUID(), title, origin: 'generated', parts }
-      store.saveExam(key, exam)
-      return { id: exam.id }
-    } catch (error) {
-      if (completed.size) rememberDraft(draftKey, completed)
-      return { error: error instanceof ProviderError ? error.message : 'Readline could not generate a test. Please try again.' }
-    } finally {
-      generating.delete(key)
-    }
+    return streamJob<ExamUpdate, string>(getRequest(), 'Could not generate a test. Please try again.', async (update, signal) => {
+      if (process.env.READLINE_AI === 'off') throw new ProviderError('AI generation is switched off.')
+      if (generating.has(key) || generating.size >= 2) throw new ProviderError('A test is already generating. Please try again in a moment.')
+      generating.add(key)
+      const draftKey = JSON.stringify([key, data.part, data.difficulty])
+      const prior = drafts.get(draftKey)
+      drafts.delete(draftKey)
+      const completed = prior && prior.expiresAt > Date.now() ? prior.parts : new Map<PartIndex, Part>()
+      try {
+        const indices: PartIndex[] = data.part === 'all' ? [0, 1, 2, 3] : [data.part]
+        const outcomes = await Promise.allSettled(indices.map(async index => {
+          if (!completed.has(index)) {
+            const part = await generatePart(index, data.difficulty, store.recentTitles(key, index), signal, stage => update({ index, stage }))
+            completed.set(index, part)
+          }
+          update({ index, stage: 'ready' })
+        }))
+        const failed = outcomes.find(outcome => outcome.status === 'rejected')
+        if (failed) throw failed.reason
+        signal.throwIfAborted()
+        const parts = indices.map(index => completed.get(index)!)
+        const title = parts.length === 1 ? parts[0].title : `Reading mock · ${data.difficulty === 'challenge' ? 'Challenge' : 'Standard'}`
+        const exam: Exam = { id: crypto.randomUUID(), title, origin: 'generated', parts }
+        store.saveExam(key, exam)
+        return exam.id
+      } catch (error) {
+        if (completed.size) rememberDraft(draftKey, completed)
+        throw error
+      } finally {
+        generating.delete(key)
+      }
+    })
   })
 
 const coaching = new Set<string>()
 export const requestCoaching = createServerFn({ method: 'POST' })
   .validator(id)
-  .handler(async ({ data }) => {
+  .handler(({ data }) => {
     origin()
     const key = requireOwner()
-    const attempt = store.result(key, data)
-    if (!attempt) return { error: 'This completed attempt could not be found.' }
-    if (attempt.coach) return { feedback: attempt.coach }
-    if (process.env.READLINE_AI === 'off') return { error: 'AI coaching is switched off for this Readline server.' }
-    if (coaching.has(data) || coaching.size >= 4) return { error: 'Coaching is already running. Try again in a moment.' }
-    coaching.add(data)
-    try {
-      const feedback = await generateCoach(attempt)
-      store.saveCoaching(key, data, feedback)
-      return { feedback }
-    } catch (error) {
-      return { error: error instanceof ProviderError ? error.message : 'Readline could not prepare coaching. Please try again.' }
-    } finally {
-      coaching.delete(data)
-    }
+    return streamJob<CoachStage, Coaching>(getRequest(), 'Could not prepare coaching. Please try again.', async (update, signal) => {
+      const attempt = store.result(key, data)
+      if (!attempt) throw new ProviderError('This completed attempt could not be found.')
+      if (attempt.coach) return attempt.coach
+      if (process.env.READLINE_AI === 'off') throw new ProviderError('AI coaching is switched off.')
+      if (coaching.has(data) || coaching.size >= 4) throw new ProviderError('Coaching is already running. Try again in a moment.')
+      coaching.add(data)
+      try {
+        update('reviewing')
+        const feedback = await generateCoach(attempt, signal, () => update('drafting'))
+        signal.throwIfAborted()
+        update('saving')
+        store.saveCoaching(key, data, feedback)
+        return feedback
+      } finally {
+        coaching.delete(data)
+      }
+    })
   })
 
 export const readAiStatus = createServerFn({ method: 'GET' }).handler(() => providerAvailable())

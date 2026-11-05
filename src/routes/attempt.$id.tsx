@@ -3,7 +3,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 import { Brand } from '../components/Shell'
 import { Icon } from '../components/Icon'
+import { ThemeToggle } from '../components/ThemeToggle'
 import { Source } from '../components/Source'
+import { Dropdown } from '../components/Dropdown'
 import { Confirm } from '../components/Confirm'
 import { PARTS, blankIndices, optionsFor } from '../lib/reading'
 import type { ActiveAttempt, Choice, PartView } from '../lib/types'
@@ -97,7 +99,7 @@ function Exam({ initial }: { initial: { attempt: ActiveAttempt; serverNow: numbe
 
   return <div className="exam">
     <header className="exam-top"><div className="exam-identity"><Brand /><span className="exam-divider" /><span>Reading mock</span></div>
-      <div className="exam-tools"><div className={'timer' + (seconds !== null && seconds <= 60 ? ' low' : '')}><Icon name="clock" size={18} />
+      <div className="exam-tools"><ThemeToggle /><div className={'timer' + (seconds !== null && seconds <= 60 ? ' low' : '')}><Icon name="clock" size={18} />
         <span role="timer" aria-label="Time remaining">{seconds === null ? 'Untimed' : format(seconds)}</span></div>
         <button className="button quiet" onClick={() => setConfirm('exit')}>Exit test</button></div>
     </header>
@@ -128,10 +130,10 @@ function Exam({ initial }: { initial: { attempt: ActiveAttempt; serverNow: numbe
 
 function Questions({ part, answers, disabled, answer }: { part: PartView; answers: Record<number, Choice>; disabled: boolean; answer: (index: number, choice: Choice) => void }) {
   const blanks = blankIndices(part.index)
-  const select = (index: number) => <select id={'question-' + index} aria-label={'Question ' + (index + 1)} value={answers[index] ?? ''} disabled={disabled}
-    onChange={event => answer(index, event.target.value === '' ? null : Number(event.target.value))}>
-    <option value="">Choose an answer</option>{optionsFor(part, part.questions[index]).map((option, i) => <option key={option} value={i}>{option}</option>)}
-  </select>
+  const select = (index: number) => <Dropdown id={'question-' + index} label={'Question ' + (index + 1)}
+    options={['Choose an answer', ...optionsFor(part, part.questions[index])]}
+    value={answers[index] == null ? 0 : answers[index] + 1} disabled={disabled}
+    onChange={option => answer(index, option === 0 ? null : option - 1)} />
   const questions = part.questions.map((question, index) => blanks.includes(index) ? null : <div className="question" key={index}>
     <label htmlFor={'question-' + index}><span className="question-number">{index + 1}</span><span>{question.prompt}</span></label>{select(index)}
   </div>)
@@ -140,6 +142,6 @@ function Questions({ part, answers, disabled, answer }: { part: PartView; answer
       const match = token.match(/^\{\{(\d+)\}\}$/)
       return match ? <span className="inline-answer" key={i}><span aria-hidden="true">{match[1]}</span>{select(Number(match[1]) - 1)}</span> : token
     })}</div></section>
-  return <><p className="questions-intro">{part.index === 2 ? 'For each statement, choose the paragraph that gives the information. Choose E if the full statement is absent.' : 'Select the best answer based on the material on the left.'}</p>
+  return <><p className="questions-intro">{part.index === 2 ? 'For each statement, choose the paragraph that gives the information. Choose E if the full statement is absent.' : 'Use the source to choose the best answer.'}</p>
     {part.index === 1 ? <>{followup}{questions}</> : <>{questions}{followup}</>}</>
 }

@@ -1,15 +1,16 @@
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { Icon } from './Icon'
+import { ThemeToggle } from './ThemeToggle'
 
 export function Brand() {
-  return <span className="brand"><img src="/mark.svg" alt="" width="38" height="38" /><span>Readline</span></span>
+  return <span className="brand"><img src="/pipprep-mark.png" alt="" width="38" height="38" /><span>PipPrep</span></span>
 }
 
 export function Shell({ title, children }: { title: string; children: ReactNode }) {
   return <div className="layout">
     <aside className="sidebar">
-      <Link to="/" className="brand-button" aria-label="Readline home"><Brand /></Link>
+      <Link to="/" className="brand-button" aria-label="PipPrep home"><Brand /></Link>
       <div className="sidebar-content">
         <nav aria-label="Practice"><p className="nav-label">Practice</p>
           <Link to="/" activeOptions={{ exact: true }} className="nav-item" activeProps={{ className: 'selected' }}><Icon name="book" size={18} />Reading</Link>
@@ -25,7 +26,7 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
       <div className="sidebar-foot"><span className="status-dot" /> CELPIP-General practice</div>
     </aside>
     <main className="workspace">
-      <div className="workspace-top"><span>Study room <span className="slash">/</span> {title}</span></div>
+      <div className="workspace-top"><span>Study room <span className="slash">/</span> {title}</span><ThemeToggle /></div>
       <div className="container">{children}</div>
       <footer className="workspace-foot">Independent CELPIP practice tool</footer>
     </main>

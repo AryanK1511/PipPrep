@@ -9,7 +9,7 @@ export default defineConfig({
   testMatch: '*.spec.ts',
   use: { baseURL: url, channel: process.env.PLAYWRIGHT_CHANNEL },
   webServer: {
-    command: 'pnpm start',
+    command: 'node .output/server/index.mjs',
     url,
     env: {
       HOST: '127.0.0.1', PORT: '4275', READLINE_AI: 'off',

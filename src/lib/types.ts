@@ -37,6 +37,9 @@ export interface Exam {
 
 export interface Coaching {
   summary: string
+  patterns?: string
+  gaps?: string
+  priority?: string
   actions: { title: string; advice: string }[]
 }
 

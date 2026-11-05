@@ -40,7 +40,7 @@ function db() {
         PRAGMA user_version = 1;
       `)
     } else if (version !== 1) {
-      throw new Error('Unsupported Readline database schema')
+      throw new Error('Unsupported PipPrep database schema')
     }
     database.exec('COMMIT')
     connection = database
