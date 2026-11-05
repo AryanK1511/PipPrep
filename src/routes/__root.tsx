@@ -12,7 +12,7 @@ export const Route = createRootRoute({
 
 function Document({ children }: { children: ReactNode }) {
   return <html lang="en-CA">
-    <head><HeadContent /></head>
+    <head><HeadContent /><script dangerouslySetInnerHTML={{ __html: "try{document.documentElement.dataset.theme=localStorage.getItem('theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light')}catch{}" }} /></head>
     <body>{children}<Scripts /></body>
   </html>
 }

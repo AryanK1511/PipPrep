@@ -9,7 +9,7 @@ import { starter } from './starter.ts'
 type AttemptRow = { id: string; state: string; coach: string | null }
 let connection: DatabaseSync | undefined
 
-function db() {
+export function db() {
   if (connection) return connection
   const file = resolve(process.env.READLINE_DB || 'data/readline.sqlite')
   mkdirSync(dirname(file), { recursive: true })
@@ -39,8 +39,23 @@ function db() {
         CREATE UNIQUE INDEX one_active_attempt ON attempts(owner) WHERE finished_at IS NULL;
         PRAGMA user_version = 1;
       `)
-    } else if (version !== 1) {
+    } else if (version !== 1 && version !== 2) {
       throw new Error('Unsupported Readline database schema')
+    }
+    if (version === 0 || version === 1) {
+      database.exec(`
+        CREATE TABLE writing_exams (
+          id TEXT PRIMARY KEY, owner TEXT NOT NULL, payload TEXT NOT NULL, created_at INTEGER NOT NULL
+        ) STRICT;
+        CREATE INDEX writing_exams_owner ON writing_exams(owner, created_at DESC);
+        CREATE TABLE writing_attempts (
+          id TEXT PRIMARY KEY, owner TEXT NOT NULL, state TEXT NOT NULL,
+          started_at INTEGER NOT NULL, finished_at INTEGER, feedback TEXT
+        ) STRICT;
+        CREATE INDEX writing_attempts_owner ON writing_attempts(owner, finished_at, started_at DESC);
+        CREATE UNIQUE INDEX one_active_writing_attempt ON writing_attempts(owner) WHERE finished_at IS NULL;
+        PRAGMA user_version = 2;
+      `)
     }
     database.exec('COMMIT')
     connection = database
@@ -51,7 +66,7 @@ function db() {
   }
 }
 
-function transaction<T>(work: () => T): T {
+export function transaction<T>(work: () => T): T {
   const database = db()
   database.exec('BEGIN IMMEDIATE')
   try {

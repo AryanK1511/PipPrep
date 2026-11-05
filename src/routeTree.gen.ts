@@ -15,6 +15,11 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as AttemptIdRouteImport } from './routes/attempt.$id'
 import { Route as NewPartRouteImport } from './routes/new.$part'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
+import { Route as WritingIndexRouteImport } from './routes/writing.index'
+import { Route as WritingGuideRouteImport } from './routes/writing.guide'
+import { Route as WritingAttemptIdRouteImport } from './routes/writing.attempt.$id'
+import { Route as WritingNewTaskRouteImport } from './routes/writing.new.$task'
+import { Route as WritingResultsIdRouteImport } from './routes/writing.results.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +51,31 @@ const ResultsIdRoute = ResultsIdRouteImport.update({
   path: '/results/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WritingIndexRoute = WritingIndexRouteImport.update({
+  id: '/writing/',
+  path: '/writing/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WritingGuideRoute = WritingGuideRouteImport.update({
+  id: '/writing/guide',
+  path: '/writing/guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WritingAttemptIdRoute = WritingAttemptIdRouteImport.update({
+  id: '/writing/attempt/$id',
+  path: '/writing/attempt/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WritingNewTaskRoute = WritingNewTaskRouteImport.update({
+  id: '/writing/new/$task',
+  path: '/writing/new/$task',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WritingResultsIdRoute = WritingResultsIdRouteImport.update({
+  id: '/writing/results/$id',
+  path: '/writing/results/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -54,6 +84,11 @@ export interface FileRoutesByFullPath {
   '/attempt/$id': typeof AttemptIdRoute
   '/new/$part': typeof NewPartRoute
   '/results/$id': typeof ResultsIdRoute
+  '/writing/guide': typeof WritingGuideRoute
+  '/writing/': typeof WritingIndexRoute
+  '/writing/attempt/$id': typeof WritingAttemptIdRoute
+  '/writing/new/$task': typeof WritingNewTaskRoute
+  '/writing/results/$id': typeof WritingResultsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +97,11 @@ export interface FileRoutesByTo {
   '/attempt/$id': typeof AttemptIdRoute
   '/new/$part': typeof NewPartRoute
   '/results/$id': typeof ResultsIdRoute
+  '/writing/guide': typeof WritingGuideRoute
+  '/writing': typeof WritingIndexRoute
+  '/writing/attempt/$id': typeof WritingAttemptIdRoute
+  '/writing/new/$task': typeof WritingNewTaskRoute
+  '/writing/results/$id': typeof WritingResultsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,14 +111,39 @@ export interface FileRoutesById {
   '/attempt/$id': typeof AttemptIdRoute
   '/new/$part': typeof NewPartRoute
   '/results/$id': typeof ResultsIdRoute
+  '/writing/guide': typeof WritingGuideRoute
+  '/writing/': typeof WritingIndexRoute
+  '/writing/attempt/$id': typeof WritingAttemptIdRoute
+  '/writing/new/$task': typeof WritingNewTaskRoute
+  '/writing/results/$id': typeof WritingResultsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/guide' | '/history' | '/attempt/$id' | '/new/$part' | '/results/$id'
+    | '/'
+    | '/guide'
+    | '/history'
+    | '/attempt/$id'
+    | '/new/$part'
+    | '/results/$id'
+    | '/writing/guide'
+    | '/writing/'
+    | '/writing/attempt/$id'
+    | '/writing/new/$task'
+    | '/writing/results/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/guide' | '/history' | '/attempt/$id' | '/new/$part' | '/results/$id'
+    | '/'
+    | '/guide'
+    | '/history'
+    | '/attempt/$id'
+    | '/new/$part'
+    | '/results/$id'
+    | '/writing/guide'
+    | '/writing'
+    | '/writing/attempt/$id'
+    | '/writing/new/$task'
+    | '/writing/results/$id'
   id:
     | '__root__'
     | '/'
@@ -87,6 +152,11 @@ export interface FileRouteTypes {
     | '/attempt/$id'
     | '/new/$part'
     | '/results/$id'
+    | '/writing/guide'
+    | '/writing/'
+    | '/writing/attempt/$id'
+    | '/writing/new/$task'
+    | '/writing/results/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -96,6 +166,11 @@ export interface RootRouteChildren {
   AttemptIdRoute: typeof AttemptIdRoute
   NewPartRoute: typeof NewPartRoute
   ResultsIdRoute: typeof ResultsIdRoute
+  WritingGuideRoute: typeof WritingGuideRoute
+  WritingIndexRoute: typeof WritingIndexRoute
+  WritingAttemptIdRoute: typeof WritingAttemptIdRoute
+  WritingNewTaskRoute: typeof WritingNewTaskRoute
+  WritingResultsIdRoute: typeof WritingResultsIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -142,6 +217,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResultsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/writing/': {
+      id: '/writing/'
+      path: '/writing'
+      fullPath: '/writing/'
+      preLoaderRoute: typeof WritingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/guide': {
+      id: '/writing/guide'
+      path: '/writing/guide'
+      fullPath: '/writing/guide'
+      preLoaderRoute: typeof WritingGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/attempt/$id': {
+      id: '/writing/attempt/$id'
+      path: '/writing/attempt/$id'
+      fullPath: '/writing/attempt/$id'
+      preLoaderRoute: typeof WritingAttemptIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/new/$task': {
+      id: '/writing/new/$task'
+      path: '/writing/new/$task'
+      fullPath: '/writing/new/$task'
+      preLoaderRoute: typeof WritingNewTaskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/writing/results/$id': {
+      id: '/writing/results/$id'
+      path: '/writing/results/$id'
+      fullPath: '/writing/results/$id'
+      preLoaderRoute: typeof WritingResultsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -152,6 +262,11 @@ const rootRouteChildren: RootRouteChildren = {
   AttemptIdRoute: AttemptIdRoute,
   NewPartRoute: NewPartRoute,
   ResultsIdRoute: ResultsIdRoute,
+  WritingGuideRoute: WritingGuideRoute,
+  WritingIndexRoute: WritingIndexRoute,
+  WritingAttemptIdRoute: WritingAttemptIdRoute,
+  WritingNewTaskRoute: WritingNewTaskRoute,
+  WritingResultsIdRoute: WritingResultsIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

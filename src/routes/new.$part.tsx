@@ -26,7 +26,7 @@ function Setup() {
   const navigate = Route.useNavigate()
   const index = part === 'all' ? 'all' : (Number(part) - 1) as PartIndex
   const meta = index === 'all' ? null : PARTS[index]
-  const [source, setSource] = useState('starter')
+  const [source, setSource] = useState(ai ? 'generated' : 'starter')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
