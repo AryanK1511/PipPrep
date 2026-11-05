@@ -1,0 +1,14 @@
+.DS_Store
+node_modules/
+.output/
+.nitro/
+.tanstack/
+dist/
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+.env*
+!.env.example
+test-results/
+playwright-report/

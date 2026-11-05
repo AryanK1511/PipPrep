@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="372" height="300" viewBox="0 0 372 300" fill="none">
+ <defs>
+  <pattern id="grid" width="26" height="26" patternUnits="userSpaceOnUse"><path d="M26 0H0v26" stroke="#c7eea4" stroke-opacity=".15"/></pattern>
+  <linearGradient id="paper" x1="12" x2="160" y1="25" y2="220" gradientUnits="userSpaceOnUse"><stop stop-color="#faf9ea"/><stop offset="1" stop-color="#e0efce"/></linearGradient>
+ </defs>
+ <path d="M16 12h341v276H16z" fill="url(#grid)"/>
+ <circle cx="200" cy="148" r="122" stroke="#d4edb2" stroke-opacity=".28"/>
+ <circle cx="200" cy="148" r="102" stroke="#d4edb2" stroke-opacity=".24" stroke-dasharray="2 6"/>
+ <circle cx="200" cy="148" r="73" stroke="#d4edb2" stroke-opacity=".2"/>
+ <path d="M200 17v260M70 148h260" stroke="#d4edb2" stroke-opacity=".2" stroke-dasharray="3 5"/>
+ <g transform="translate(101 51) rotate(-12 90 105)">
+  <rect x="13" y="13" width="172" height="201" rx="9" fill="#132b22" stroke="#759887"/>
+  <rect x="5" y="6" width="172" height="201" rx="9" fill="#a1bc92" stroke="#587f67"/>
+  <rect width="172" height="201" rx="9" fill="url(#paper)" stroke="#395b46"/>
+  <path d="M23 31h42m-42 15h107" stroke="#264c3a" stroke-width="6" stroke-linecap="round"/>
+  <path d="M23 75h126M23 88h99M23 101h122M23 127h119M23 140h83M23 153h111M23 166h64" stroke="#658372" stroke-width="3" stroke-linecap="round" opacity=".65"/>
+  <rect x="21" y="118" width="124" height="16" rx="3" fill="#c7ec78" fill-opacity=".56"/>
+ </g>
+ <g transform="translate(220 125) rotate(12 49 54)">
+  <rect x="4" y="5" width="97" height="108" rx="9" fill="#132b22" fill-opacity=".3"/>
+  <rect width="97" height="108" rx="9" fill="#d9f78b" stroke="#264c3a"/>
+  <path d="M15 22h53M15 35h35" stroke="#315043" stroke-width="3" stroke-linecap="round"/>
+  <rect x="14" y="50" width="68" height="34" rx="5" stroke="#315043"/>
+  <path d="m24 66 5 5 9-11m9 7h23" stroke="#315043" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+ </g>
+ <path d="M56 85v18m-9-9h18m247-49v14m-7-7h14m17 171v21m-10-10h20" stroke="#d9f78b" stroke-width="1.6" stroke-linecap="round"/>
+ <circle cx="65" cy="233" r="3" fill="#d9f78b"/>
+ <circle cx="326" cy="112" r="3" stroke="#d9f78b"/>
+</svg>
