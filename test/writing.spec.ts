@@ -25,7 +25,7 @@ test('writing mock autosaves, resumes, locks tasks and persists private review',
   await page.getByRole('button', { name: 'Submit writing' }).click()
   await expect(page.getByRole('heading', { name: 'Writing results' })).toBeVisible()
   await expect(page.locator('.submitted-writing')).toHaveText([email, survey])
-  await expect(page.getByText('No component estimate')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Writing score' })).toContainText('Enable AI to get your score')
   const url = page.url()
   await page.reload()
   await expect(page.locator('.submitted-writing')).toHaveText([email, survey])
@@ -50,6 +50,8 @@ test('single survey task works on mobile with a 26-minute timer and a blank subm
   await page.getByRole('button', { name: 'Submit writing' }).click()
   await expect(page.getByText('No response submitted.', { exact: true })).toBeVisible()
   await expect(page.getByText(/No writing was submitted/)).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Writing score' })).toContainText('Estimated task score')
+  await expect(page.getByRole('region', { name: 'Writing score' })).toContainText('Not enough writing to score')
 })
 
 test('a competing tab cannot overwrite writing and the local draft can be recovered', async ({ page, context }) => {

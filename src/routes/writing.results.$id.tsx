@@ -53,11 +53,15 @@ function Results({ attempt, enabled }: { attempt: WritingAttempt; enabled: boole
     setDrafts(recovered)
   }, [attempt.id])
   const full = attempt.exam.tasks.length === 2
+  const score = full ? feedback?.estimate : feedback?.tasks.find(task => task.index === attempt.exam.tasks[0].index)?.estimate
   return <Shell title="Writing review">
     <div className="section-heading"><div><p className="eyebrow">Attempt complete</p><h1>Writing results</h1><p>{attempt.exam.title} · {attempt.timed ? 'Timed' : 'Untimed'} · {duration(attempt.elapsed.reduce((sum, ms) => sum + ms, 0))} used</p></div><Link to="/writing" className="button secondary">Back to Writing</Link></div>
-    <div className="result-top"><section className="score-card"><span className="eyebrow">{full ? 'Estimated practice level' : 'Task practice'}</span><div><strong>{full ? band(feedback?.estimate ?? null) : '1 task'}</strong></div><p>{full ? feedback?.estimate ? 'CELPIP Writing · AI estimate' : busy ? 'Assessment in progress' : 'No component estimate' : 'Task estimate appears in your review'}</p></section>
+    <div className="result-top"><section className="score-card" aria-label="Writing score" aria-live="polite"><span className="eyebrow">{full ? 'Estimated Writing score' : 'Estimated task score'}</span><div><strong>{band(score ?? null)}</strong>{score && <span> / 12</span>}</div><p>{score ? full ? 'CELPIP Writing · AI practice estimate' : `Task ${attempt.exam.tasks[0].index + 1} · AI practice estimate` : busy ? 'Scoring your writing…' : !hasText ? 'Not enough writing to score' : !enabled && !feedback ? 'Enable AI to get your score' : full ? 'No component estimate' : 'No task estimate'}</p></section>
       <section className="card score-summary"><h2>Your writing snapshot</h2><p>AI estimates are uncertain practice feedback. CELPIP uses trained raters and its own score conversion. A single task cannot establish a Writing component level.</p>
-        <div className="breakdown">{attempt.exam.tasks.map((task, i) => <div key={task.index}><span>Task {task.index + 1} · {WRITING_TASKS[task.index].short}</span><small>{duration(attempt.elapsed[i])}</small><strong>{wordCount(attempt.responses[task.index] || '')} words</strong></div>)}</div>
+        <div className="breakdown">{attempt.exam.tasks.map((task, i) => {
+          const taskScore = feedback?.tasks.find(item => item.index === task.index)?.estimate
+          return <div key={task.index}><span>Task {task.index + 1} · {WRITING_TASKS[task.index].short}<small className="writing-task-meta">{duration(attempt.elapsed[i])} · {wordCount(attempt.responses[task.index] || '')} words</small></span><strong>{taskScore ? `Estimated score ${band(taskScore)} / 12` : busy ? 'Scoring…' : 'No task score'}</strong></div>
+        })}</div>
       </section></div>
     <section className="card coach-card"><div className="coach-heading"><span className="icon-tile"><Icon name="sparkle" /></span><div><h2>AI writing feedback</h2><p>Evidence, corrections, and your next steps</p></div></div>
       <div aria-live="polite">{feedback ? <><p>{feedback.summary}</p><ol className="coach-actions">{feedback.actions.map(action => <li key={action.title}><strong>{action.title}</strong><span>{action.advice}</span></li>)}</ol></>
@@ -71,7 +75,7 @@ function Results({ attempt, enabled }: { attempt: WritingAttempt; enabled: boole
         const review = feedback?.tasks.find(item => item.index === task.index)
         const count = wordCount(text)
         return <article className="review-part writing-review" key={task.index}>
-          <div className="review-part-head"><h3>Task {task.index + 1} · {WRITING_TASKS[task.index].name}</h3><span className="badge">{review?.estimate ? `Estimated task level ${band(review.estimate)}` : `${count} words`}</span></div>
+          <div className="review-part-head"><h3>Task {task.index + 1} · {WRITING_TASKS[task.index].name}</h3><span className="badge">{review?.estimate ? `Estimated task score ${band(review.estimate)} / 12` : `${count} words`}</span></div>
           <details className="review-source"><summary>Read the task again</summary><WritingPrompt task={task} /></details>
           <h4>Your submitted response</h4><div className="submitted-writing">{text || 'No response submitted.'}</div>
           <p className="word-note">{count} words · {count === 0 ? 'No language to assess.' : count < 150 ? 'Below the suggested range. Check that you developed each required point.' : count > 200 ? 'Above the suggested range. Check for repetition and keep the response focused.' : 'Within the suggested 150–200-word range.'} Word count alone does not determine a level.</p>

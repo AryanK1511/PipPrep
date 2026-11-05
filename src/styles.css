@@ -292,6 +292,7 @@ legend, .difficulty { margin: 0 0 8px; font-size: .79rem; font-weight: 720; }
 .band strong { display: block; font: 400 1.6rem/1.2 var(--serif); margin-top: 4px; }
 .breakdown > div { display: grid; grid-template-columns: 1fr auto auto; gap: 11px; padding: 8px 0; border-top: 1px solid var(--line); font-size: .8rem; }
 .breakdown small { color: var(--muted); font-variant-numeric: tabular-nums; }
+.breakdown .writing-task-meta { display: block; margin-top: 4px; }
 .coach-card { padding: 18px 20px; margin-bottom: 32px; }
 .coach-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .coach-heading h2 { font-size: 1.45rem; margin-bottom: 1px; }
@@ -488,7 +489,7 @@ a.nav-item:hover { background: #233d32; }
 .editor-meta [role="status"] { white-space: nowrap; }
 .writing-review { padding: 18px; }
 .writing-review h4 { font-size: .88rem; margin: 20px 0 10px; }
-.submitted-writing { padding: 16px 20px; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 9px; background: #f8faf5; font: 400 1.06rem/1.7 var(--serif); }
+.submitted-writing { padding: 16px 20px; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); color: var(--ink); font: 400 1.06rem/1.7 var(--serif); }
 .word-note { color: var(--muted); font-size: .78rem; margin-top: 9px; }
 .task-summary { padding: 12px 0; font-size: .9rem; }
 .dimension-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -505,8 +506,8 @@ a.nav-item:hover { background: #233d32; }
 .improved-writing { border-top: 1px solid var(--line); padding-top: 15px; margin-top: 20px; }
 .improved-writing summary, .recovered-draft summary { cursor: pointer; font-weight: 650; font-size: .86rem; }
 .improved-writing > p, .recovered-draft > p { color: var(--muted); font-size: .83rem; margin-top: 10px; }
-.recovered-draft { padding: 12px; background: #f7efd9; border-radius: 8px; margin-bottom: 12px; }
-.recovered-draft textarea { width: 100%; min-height: 160px; margin-top: 10px; padding: 10px; font: 1rem/1.6 var(--serif); }
+.recovered-draft { padding: 12px; background: var(--tint); border-radius: 8px; margin-bottom: 12px; }
+.recovered-draft textarea { width: 100%; min-height: 160px; margin-top: 10px; padding: 10px; background: var(--paper); color: var(--ink); font: 1rem/1.6 var(--serif); }
 .writing-history { margin: 28px 0 12px; }
 @media (max-width: 660px) {
   .writing-editor { min-height: 410px; resize: vertical; }

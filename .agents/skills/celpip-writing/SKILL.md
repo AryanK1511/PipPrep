@@ -37,6 +37,8 @@ A task under 30 words must have a null task estimate: the app uses this conserva
 
 ## Useful feedback
 
+When coaching or revising an email, state its purpose early, develop each required point with a relevant reason, example, or consequence, and connect paragraphs through meaning rather than decorative connectors. Where the task calls for reassurance, support it with a feasible action addressing the reader’s concern. A point followed by a supporting sentence can help planning, but sentence counts are flexible. Judge vocabulary, sentence variety, and punctuation by accuracy and suitability, not by how advanced they appear; do not award automatic credit for adjectives, semicolons, or stock phrases, invent a separate emotional-intelligence score, or promise a level from a template.
+
 Explain the evidence for the estimated range and the next improvement that would matter. Give up to five corrections per task only where the original exact substring warrants a change; explain the reason and preserve intended meaning. Do not manufacture mistakes to fill the list. Distinguish optional style suggestions from errors. Give a 150–200-word illustrative improved response per task, with paragraphs and appropriate tone. Keep the learner's position and useful ideas when present; if adding details to develop a thin response, make clear in the task summary that the example adds illustrative details. Do not assign a verified score to the example or imply the learner wrote it.
 
 End with one to three prioritized practice actions grounded in observed weaknesses or, for strong writing, in maintaining control and pacing. Return only the application schema; no Markdown inside fields.
