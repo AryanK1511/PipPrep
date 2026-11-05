@@ -1,6 +1,6 @@
 # PipPrep
 
-PipPrep is an independent CELPIP-General practice app. Reading is the first skill available. Take a 38-question mock or drill a single part, then review the evidence behind each answer. The starter mock works without AI credentials.
+PipPrep is an independent CELPIP-General Reading and Writing practice app. Take a 38-question Reading mock, practise an email or survey response, or complete both Writing tasks in 53 minutes. Starter practice works without AI credentials.
 
 ## Run locally
 
@@ -15,7 +15,15 @@ Open [PipPrep](http://127.0.0.1:4175).
 
 Choose timed or untimed practice. In a timed attempt, the server keeps the deadline even if you close the tab. Answers, completed attempts, and coaching are saved in SQLite. The browser uses a private cookie to reopen its study record. Keep using the same browser and address to access that record.
 
-For a fresh test and coaching, install the Codex CLI and sign in with `codex login`. Start PipPrep from a terminal that can run `codex`. Codex receives the generated practice material and submitted answers needed for coaching. Your Codex account's usage limits apply. If a generated mock fails, retry the same settings within 15 minutes to reuse the parts that already passed validation.
+For fresh tests, Writing level estimates, and coaching, install the Codex CLI and sign in with `codex login`. Start PipPrep from a terminal that can run `codex`. Codex receives the generated practice material and submitted answers or writing responses needed for coaching. Your Codex account's usage limits apply. If a generated mock fails, retry the same settings within 15 minutes to reuse the parts that already passed validation.
+
+## Writing practice
+
+Open Writing in the sidebar. Choose a full mock or a single task, use starter or AI-generated prompts, then select timed or untimed mode. The email has 27 minutes and the survey response 26 minutes. Each task targets about 150–200 words. Drafts autosave; wait for “Saved” before leaving. Timers keep running outside the app, and tasks lock when submitted or expired. A browser backup can recover unsaved text without changing a locked submission.
+
+After submission, AI feedback covers all four writing dimensions, requirement coverage, exact-text corrections, an illustrative revision, and prioritized practice actions. Full assessable mocks receive an estimated practice level range; drills receive task feedback. This is not an official or verified CELPIP score. With AI disabled, submitted responses and word counts remain available in Attempt history. Enable AI and reload a review to request feedback later.
+
+The evaluator uses the repository’s [CELPIP writing skill](.agents/skills/celpip-writing/SKILL.md), bundled into the server build. See [Writing research notes](writing.md) for current official sources and scoring limitations.
 
 ## Build and run
 

@@ -419,7 +419,7 @@ legend, .difficulty { margin: 0 0 8px; font-size: .79rem; font-weight: 720; }
   .sidebar-content { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 8px; }
   .sidebar-content nav { display: flex; gap: 4px; flex-wrap: wrap; }
   .sidebar-content .nav-item { min-height: 36px; width: auto; padding: 6px 9px; font-size: .79rem; margin: 0; }
-  .sidebar .nav-label, .sidebar .nav-item.inactive, .sidebar-foot { display: none; }
+  .sidebar .nav-label, .sidebar .nav-item.inactive { display: none; }
   .workspace-top { min-height: 44px; }
   .container { padding-top: 20px; }
   .hero { min-height: 260px; }
@@ -470,3 +470,49 @@ a.brand-button, a.part-card { color: inherit; }
 a.nav-item:hover { background: #233d32; }
 .setup-card { max-width: 570px; padding: 22px; }
 .inline-error { padding: 9px 12px; background: #fae6df; color: #85372b; border-radius: 8px; margin: 12px 0; }
+
+.writing-task-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.setup-note { color: var(--muted); font-size: .82rem; }
+.writing-prompt { overflow-wrap: anywhere; }
+.writing-prompt h2 { font-size: clamp(1.6rem, 2.5vw, 2.2rem); }
+.writing-prompt p, .writing-prompt li { font: 400 1.07rem/1.65 var(--serif); }
+.writing-prompt ul { padding-left: 22px; }
+.writing-prompt li { margin-bottom: 10px; }
+.survey-options { display: grid; gap: 10px; margin-bottom: 20px; }
+.survey-options p { margin: 0; padding: 12px 15px; border: 1px solid var(--line); border-radius: 8px; background: var(--tint); }
+.survey-options strong, .survey-options span { display: block; }
+.writing-editor { flex: 1; width: 100%; min-height: 240px; resize: none; border: 0; padding: clamp(14px, 2vw, 26px); background: var(--white); color: var(--ink); font: 400 1.1rem/1.75 var(--serif); }
+.writing-editor:focus-visible { outline-offset: -3px; }
+.writing-editor::placeholder { color: #728474; }
+.editor-meta { display: flex; justify-content: space-between; gap: 8px; padding: 12px 17px; border-top: 1px solid var(--line); font-size: .76rem; color: var(--muted); }
+.editor-meta [role="status"] { white-space: nowrap; }
+.writing-review { padding: 18px; }
+.writing-review h4 { font-size: .88rem; margin: 20px 0 10px; }
+.submitted-writing { padding: 16px 20px; white-space: pre-wrap; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 9px; background: #f8faf5; font: 400 1.06rem/1.7 var(--serif); }
+.word-note { color: var(--muted); font-size: .78rem; margin-top: 9px; }
+.task-summary { padding: 12px 0; font-size: .9rem; }
+.dimension-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dimension-card { border: 1px solid var(--line); border-radius: 9px; padding: 14px; }
+.dimension-card h4 { margin: 0 0 9px; }
+.dimension-card p, .coverage-list p, .correction-list p { font-size: .85rem; margin: 0 0 8px; overflow-wrap: anywhere; }
+.dimension-card blockquote { margin: 12px 0; border-left: 3px solid #adc6a9; padding: 7px 12px; background: var(--tint); font: 400 1rem/1.5 var(--serif); overflow-wrap: anywhere; }
+.coverage-list { list-style: none; padding: 0; }
+.coverage-list li { display: flex; align-items: start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.coverage-list strong { font-size: .85rem; }
+.coverage-list p { color: var(--muted); margin-top: 5px; }
+.correction-list > div { padding: 12px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 8px; }
+.correction-list p:last-child { color: var(--muted); margin-bottom: 0; }
+.improved-writing { border-top: 1px solid var(--line); padding-top: 15px; margin-top: 20px; }
+.improved-writing summary, .recovered-draft summary { cursor: pointer; font-weight: 650; font-size: .86rem; }
+.improved-writing > p, .recovered-draft > p { color: var(--muted); font-size: .83rem; margin-top: 10px; }
+.recovered-draft { padding: 12px; background: #f7efd9; border-radius: 8px; margin-bottom: 12px; }
+.recovered-draft textarea { width: 100%; min-height: 160px; margin-top: 10px; padding: 10px; font: 1rem/1.6 var(--serif); }
+.writing-history { margin: 28px 0 12px; }
+@media (max-width: 660px) {
+  .writing-editor { min-height: 410px; resize: vertical; }
+  .dimension-grid { grid-template-columns: 1fr; }
+  .writing-review { padding: 12px; }
+  .writing-review .review-part-head { flex-wrap: wrap; }
+  .coverage-list li { flex-wrap: wrap; }
+  .submitted-writing { padding: 12px; }
+}

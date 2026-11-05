@@ -15,12 +15,13 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
         <nav aria-label="Practice"><p className="nav-label">Practice</p>
           <Link to="/" activeOptions={{ exact: true }} className="nav-item" activeProps={{ className: 'selected' }}><Icon name="book" size={18} />Reading</Link>
           <div className="nav-item inactive"><Icon name="headphones" size={18} />Listening<small>Later</small></div>
-          <div className="nav-item inactive"><Icon name="pen" size={18} />Writing<small>Later</small></div>
+          <Link to="/writing" className="nav-item" activeProps={{ className: 'selected' }}><Icon name="pen" size={18} />Writing</Link>
           <div className="nav-item inactive"><Icon name="mic" size={18} />Speaking<small>Later</small></div>
         </nav>
         <nav aria-label="Study"><p className="nav-label">Study</p>
           <Link to="/history" className="nav-item" activeProps={{ className: 'selected' }}><Icon name="chart" size={18} />Attempt history</Link>
           <Link to="/guide" className="nav-item" activeProps={{ className: 'selected' }}><Icon name="help" size={18} />Reading guide</Link>
+          <Link to="/writing/guide" className="nav-item" activeProps={{ className: 'selected' }}><Icon name="help" size={18} />Writing guide</Link>
         </nav>
       </div>
       <div className="sidebar-foot"><span className="status-dot" /> CELPIP-General practice</div>

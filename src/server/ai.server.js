@@ -36,7 +36,7 @@ const partSchema = index => object({
 
 export class ProviderError extends Error {}
 
-async function requestModel(prompt, schema, signal) {
+export async function requestModel(prompt, schema, signal) {
   const dir = await mkdtemp(join(tmpdir(), 'pipprep-'))
   try {
     const schemaPath = join(dir, 'schema.json')
@@ -90,7 +90,7 @@ const TOPICS = [
 export async function generatePart(index, difficulty, recentTitles, signal, update) {
   const part = PARTS[index]
   const topic = TOPICS[index][Math.floor(Math.random() * TOPICS[index].length)]
-  const prompt = `Create one original, realistic CELPIP-General Reading practice part. Never copy official questions or passages. Use Canadian English and Canadian everyday settings. This is assessment content. Return only the requested structured JSON. Do not use tools or access files.
+  const prompt = `Create one original, realistic CELPIP-General Reading practice part. Invent fresh names, organizations, and scenarios for each exercise; vary names across diverse Canadian backgrounds and keep each character’s name consistent throughout the passage, questions, and explanations. Do not reuse a fixed cast of example characters. Never copy official questions or passages. Use Canadian English and Canadian everyday settings. This is assessment content. Return only the requested structured JSON. Do not use tools or access files.
 
 Part ${index + 1}, ${part.name}. Set index to ${index}. Provide exactly ${part.count} numbered-in-order questions. Target difficulty is ${difficulty === 'challenge' ? 'challenging, using close but conclusively wrong distractors, exact qualifications and natural paraphrase' : 'typical of a full practice test, with a mix of direct and inferred answers'}. Complexity should suit the specific part.
 Format: ${FORMATS[index]}
