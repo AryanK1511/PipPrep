@@ -18,7 +18,7 @@ test('writing mock autosaves, resumes, locks tasks and persists private review',
   await page.getByRole('button', { name: 'Next task' }).click()
   await page.getByRole('button', { name: 'Continue to next task' }).click()
   await expect(page.getByRole('heading', { name: 'Responding to Survey Questions' })).toBeVisible()
-  const survey = 'I prefer the community garden. It would give neighbours a place to grow affordable vegetables and meet each other. People who do not have a backyard could share tools and learn gardening skills.'
+  const survey = 'I prefer the community garden. It would give neighbors a place to grow affordable vegetables and meet each other. People who do not have a backyard could share tools and learn gardening skills.'
   await page.getByRole('textbox', { name: 'Your response' }).fill(survey)
   // Submit immediately: the final edit must be saved even before the debounce fires.
   await page.getByRole('button', { name: 'Finish writing' }).click()
@@ -39,7 +39,7 @@ test('writing mock autosaves, resumes, locks tasks and persists private review',
 test('single survey task works on mobile with a 26-minute timer and a blank submission', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/writing')
-  await page.getByRole('link', { name: 'Practise Responding to Survey Questions' }).click()
+  await page.getByRole('link', { name: 'Practice Responding to Survey Questions' }).click()
   await page.getByRole('button', { name: 'Begin writing' }).click()
   await expect(page.getByRole('timer')).toHaveText(/^(26:00|25:5[7-9])$/)
   const prompt = await page.getByRole('region', { name: 'Writing prompt' }).boundingBox()
@@ -87,4 +87,65 @@ test('an offline draft survives a reload and resumes autosaving after reconnecti
   await expect(page.getByRole('status', { name: 'Save status' })).toHaveText('Saved')
   await page.reload()
   await expect(page.getByRole('textbox', { name: 'Your response' })).toHaveValue('A draft written while the connection is unavailable.')
+})
+
+test('failed saves in two tabs keep separate drafts across reloads and submission', async ({ page, context }) => {
+  await page.goto('/writing/new/1')
+  await page.getByRole('radio', { name: /Untimed/ }).check()
+  await page.getByRole('button', { name: 'Begin writing' }).click()
+  await expect(page.getByRole('textbox', { name: 'Your response' })).toBeVisible()
+  const other = await context.newPage()
+  try {
+    await other.goto(page.url())
+    await page.route('**/_serverFn/**', route => route.abort())
+    await other.route('**/_serverFn/**', route => route.abort())
+    await page.getByRole('textbox', { name: 'Your response' }).fill('First tab unsaved draft.')
+    await expect(page.getByRole('status', { name: 'Save status' })).toHaveText('Not saved')
+    await other.getByRole('textbox', { name: 'Your response' }).fill('Second tab unsaved draft.')
+    await expect(other.getByRole('status', { name: 'Save status' })).toHaveText('Not saved')
+
+    await page.unroute('**/_serverFn/**')
+    await page.reload()
+    await expect(page.getByRole('textbox', { name: 'Your response' })).toHaveValue('First tab unsaved draft.')
+    await expect(page.getByRole('status', { name: 'Save status' })).toHaveText('Saved')
+    await page.getByRole('button', { name: 'Finish writing' }).click()
+    await page.getByRole('button', { name: 'Submit writing' }).click()
+    await expect(page.locator('.submitted-writing')).toHaveText('First tab unsaved draft.')
+
+    await other.unroute('**/_serverFn/**')
+    await other.reload()
+    await expect(other.getByRole('heading', { name: 'Writing results' })).toBeVisible()
+    await other.getByText('Recover unsaved browser text').click()
+    await expect(other.getByRole('textbox', { name: 'Unsaved Task 1 draft' })).toHaveValue('Second tab unsaved draft.')
+  } finally { await other.close() }
+})
+
+test('discard succeeds when browser storage is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    for (const name of ['sessionStorage', 'localStorage']) {
+      Object.defineProperty(window, name, { get() { throw new Error('Storage unavailable') } })
+    }
+  })
+  await page.goto('/writing/new/1')
+  await page.getByRole('button', { name: 'Begin writing' }).click()
+  await expect(page.getByRole('textbox', { name: 'Your response' })).toBeVisible()
+  const attemptUrl = page.url()
+  await page.getByRole('button', { name: 'Exit test' }).click()
+  await page.getByRole('button', { name: 'Discard attempt' }).click()
+  await expect(page.getByRole('heading', { name: 'Writing practice', exact: true })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Resume writing' })).toHaveCount(0)
+  expect((await page.goto(attemptUrl))?.status()).toBe(404)
+})
+
+test('existing browser backups migrate into the current tab', async ({ page }) => {
+  await page.goto('/writing/new/1')
+  await page.getByRole('radio', { name: /Untimed/ }).check()
+  await page.getByRole('button', { name: 'Begin writing' }).click()
+  await expect(page.getByRole('textbox', { name: 'Your response' })).toBeVisible()
+  const id = page.url().split('/').at(-1)!
+  await page.evaluate(id => localStorage.setItem(`readline-writing:${id}:0`, JSON.stringify({ response: 'Draft from the earlier app version.', revision: 0 })), id)
+  await page.reload()
+  await expect(page.getByRole('textbox', { name: 'Your response' })).toHaveValue('Draft from the earlier app version.')
+  await expect(page.getByRole('status', { name: 'Save status' })).toHaveText('Saved')
+  expect(await page.evaluate(id => localStorage.getItem(`readline-writing:${id}:0`), id)).toBeNull()
 })

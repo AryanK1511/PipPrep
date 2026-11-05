@@ -31,8 +31,8 @@ function Home() {
       <Stat icon="target" label="Best full mock" value={best === null ? '—' : best + ' / 38'} detail="Raw score" />
     </div>
     <section className="part-section">
-      <div className="section-heading"><div><h2>Practise by part</h2><p>Work on one format at a time.</p></div><Link to="/guide" className="button quiet">See the format <Icon name="arrow" size={17} /></Link></div>
-      <div className="part-grid">{PARTS.map((part, index) => <Link to="/new/$part" params={{ part: String(index + 1) }} key={part.name} className="part-card" aria-label={'Practise ' + part.name}>
+      <div className="section-heading"><div><h2>Practice by part</h2><p>Work on one format at a time.</p></div><Link to="/guide" className="button quiet">See the format <Icon name="arrow" size={17} /></Link></div>
+      <div className="part-grid">{PARTS.map((part, index) => <Link to="/new/$part" params={{ part: String(index + 1) }} key={part.name} className="part-card" aria-label={'Practice ' + part.name}>
         <span className="part-card-top"><span className="icon-tile"><Icon name={part.icon} /></span><span className="part-number">Part 0{index + 1}</span></span>
         <strong>{part.name}</strong><span className="part-description">{part.description}</span>
         <span className="part-card-foot">{part.count} questions · {part.minutes} min <Icon name="arrow" size={18} /></span>

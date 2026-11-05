@@ -88,7 +88,7 @@ test('desktop uses two panes and a timed attempt can be resumed', async ({ page 
 test('mobile stacks the diagram and answer panel and scores a drill', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
-  await page.getByRole('link', { name: 'Practise Reading to Apply a Diagram' }).click()
+  await page.getByRole('link', { name: 'Practice Reading to Apply a Diagram' }).click()
   await begin(page)
   const left = await page.getByRole('region', { name: 'Flyer or schedule content' }).boundingBox()
   const right = await page.getByRole('region', { name: 'Answer choices' }).boundingBox()

@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import type { IconName } from './Icon'
 
-export function JobProgress({ title, detail, steps, icon = 'sparkle' }: {
+export function JobProgress({ title, detail, steps, icon = 'sparkle', startedAt }: {
+  startedAt?: number
   title: string
   detail: string
   steps: { label: string; status: string; done?: boolean }[]
@@ -10,13 +11,14 @@ export function JobProgress({ title, detail, steps, icon = 'sparkle' }: {
 }) {
   const [seconds, setSeconds] = useState(0)
   useEffect(() => {
-    const start = performance.now()
-    const timer = window.setInterval(() => setSeconds(Math.floor((performance.now() - start) / 1000)), 1000)
+    const start = startedAt ?? Date.now()
+    setSeconds(Math.max(0, Math.floor((Date.now() - start) / 1000)))
+    const timer = window.setInterval(() => setSeconds(Math.max(0, Math.floor((Date.now() - start) / 1000))), 1000)
     return () => window.clearInterval(timer)
-  }, [])
+  }, [startedAt])
 
   const elapsed = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
-  return <div className="job-progress">
+  return <div className="job-progress" role="status" aria-label={title}>
     <div className="job-heading">
       <span className="icon-tile"><Icon name={icon} /></span>
       <div><strong>{title}</strong><p>{detail}</p></div>

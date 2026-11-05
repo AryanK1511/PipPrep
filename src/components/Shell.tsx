@@ -1,6 +1,8 @@
+import { AiProviderToggle } from './AiProvider'
 import { Link } from '@tanstack/react-router'
 import type { ReactNode } from 'react'
 import { Icon } from './Icon'
+import { BackgroundJobs } from './BackgroundJobs'
 import { ThemeToggle } from './ThemeToggle'
 
 export function Brand() {
@@ -19,17 +21,16 @@ export function Shell({ title, children }: { title: string; children: ReactNode 
           <div className="nav-item inactive"><Icon name="mic" size={18} />Speaking<small>Later</small></div>
         </nav>
         <nav aria-label="Study"><p className="nav-label">Study</p>
+          <Link to="/rooms" className="nav-item" activeProps={{ className: 'selected' }}><Icon name="comment" size={18} />Study rooms</Link>
           <Link to="/history" className="nav-item" activeProps={{ className: 'selected' }}><Icon name="chart" size={18} />Attempt history</Link>
           <Link to="/guide" className="nav-item" activeProps={{ className: 'selected' }}><Icon name="help" size={18} />Reading guide</Link>
           <Link to="/writing/guide" className="nav-item" activeProps={{ className: 'selected' }}><Icon name="help" size={18} />Writing guide</Link>
         </nav>
       </div>
-      <div className="sidebar-foot"><span className="status-dot" /> CELPIP-General practice</div>
+      <div className="sidebar-foot"><AiProviderToggle /><ThemeToggle /></div>
     </aside>
-    <main className="workspace">
-      <div className="workspace-top"><span>Study room <span className="slash">/</span> {title}</span><ThemeToggle /></div>
-      <div className="container">{children}</div>
-      <footer className="workspace-foot">Independent CELPIP practice tool</footer>
+    <main className="workspace" aria-label={title}>
+      <div className="container"><BackgroundJobs />{children}</div>
     </main>
   </div>
 }

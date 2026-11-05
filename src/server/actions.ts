@@ -1,58 +1,44 @@
 import { createServerFn } from '@tanstack/react-start'
-import { getCookie, getRequest, setCookie, setResponseHeader } from '@tanstack/react-start/server'
+import { getCookie, getRequest, setCookie } from '@tanstack/react-start/server'
 import { z } from 'zod'
+import { providerSettings } from './providers.server.ts'
+import { PROVIDERS } from '../lib/providers.ts'
 import type { Coaching, Exam, Part, PartIndex } from '../lib/types.ts'
 import { generateCoach, generatePart, ProviderError, providerAvailable } from './ai.server.js'
 import type { CoachStage, ExamUpdate } from '../lib/progress.ts'
 import { streamJob } from './progress.server.ts'
 import * as store from './store.server.ts'
+import { listJobs, startJob, dismissJob } from './jobs.server.ts'
 import * as writingStore from './writing-store.server.ts'
 import { evaluateWriting, generateWritingTasks } from './writing-ai.server.ts'
 import { MAX_RESPONSE_LENGTH } from '../lib/writing.ts'
 import type { WritingExam, WritingIndex } from '../lib/writing.ts'
+import { owner, origin, ensureOwner, requireOwner, privateRead } from './session.server.ts'
+import { roomForAttempt, withdrawAttempt } from './rooms.server.ts'
 
 const id = z.uuid()
 const partIndex = z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)])
 const scope = z.union([partIndex, z.literal('all')])
 const writingScope = z.union([z.literal(0), z.literal(1), z.literal('all')])
-const cookieName = 'readline_owner'
 
-function owner() {
-  const value = id.safeParse(getCookie(cookieName))
-  return value.success ? value.data : undefined
-}
+const providerCookie = 'pipprep_provider'
+const currentProvider = async () => (await providerSettings(getCookie(providerCookie))).selected
 
-function origin() {
-  const request = getRequest()
-  const url = new URL(request.url)
-  const configured = process.env.READLINE_ORIGIN
-  if (!configured && !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) {
-    throw new Error('Set READLINE_ORIGIN to the public address before accepting changes.')
-  }
-  const expected = configured || url.origin
-  if (request.headers.get('origin') !== expected) throw new Error('Open PipPrep directly to make changes.')
-  return expected
-}
-
-function ensureOwner(expected: string) {
-  const existing = owner()
-  if (existing) return existing
-  const key = crypto.randomUUID()
-  setCookie(cookieName, key, {
-    httpOnly: true, sameSite: 'lax', path: '/', secure: expected.startsWith('https:'), maxAge: 60 * 60 * 24 * 365,
+export const readProviderSettings = createServerFn({ method: 'GET' })
+  .validator(z.object({ refresh: z.boolean().default(false) }))
+  .handler(({ data }) => {
+    privateRead()
+    return providerSettings(getCookie(providerCookie), data.refresh)
   })
-  return key
-}
-
-function requireOwner() {
-  const key = owner()
-  if (!key) throw new Error('Your PipPrep session has expired.')
-  return key
-}
-
-function privateRead() {
-  setResponseHeader('Cache-Control', 'private, no-store')
-}
+export const selectProvider = createServerFn({ method: 'POST' })
+  .validator(z.enum(PROVIDERS))
+  .handler(async ({ data }) => {
+    const expected = origin()
+    setCookie(providerCookie, data, {
+      httpOnly: true, sameSite: 'lax', path: '/', secure: expected.startsWith('https:'), maxAge: 60 * 60 * 24 * 365,
+    })
+    return providerSettings(data)
+  })
 
 export const readDashboard = createServerFn({ method: 'GET' }).handler(() => {
   privateRead()
@@ -65,7 +51,7 @@ export const readSetup = createServerFn({ method: 'GET' })
     privateRead()
     const key = owner()
     const exam = key && data.ready ? store.getExam(key, data.ready) : null
-    return { ai: await providerAvailable(), ready: exam ? { id: exam.id, title: exam.title } : null }
+    return { ai: await providerAvailable(await currentProvider()), ready: exam ? { id: exam.id, title: exam.title } : null }
   })
 
 export const beginAttempt = createServerFn({ method: 'POST' })
@@ -80,7 +66,8 @@ export const readAttempt = createServerFn({ method: 'GET' })
   .handler(({ data }) => {
     privateRead()
     const key = owner()
-    return key ? store.getAttempt(key, data) : null
+    const response = key ? store.getAttempt(key, data) : null
+    return response ? { ...response, roomCode: roomForAttempt(key!, data)?.code ?? null } : null
   })
 
 export const mutateAttempt = createServerFn({ method: 'POST' })
@@ -107,7 +94,8 @@ export const deleteSavedAttempt = createServerFn({ method: 'POST' })
   .validator(id)
   .handler(({ data }) => {
     origin()
-    store.deleteAttempt(requireOwner(), data)
+    const key = requireOwner()
+    if (!withdrawAttempt(key, data)) store.deleteAttempt(key, data)
   })
 
 const generating = new Set<string>()
@@ -125,14 +113,16 @@ function rememberDraft(key: string, parts: Map<PartIndex, Part>) {
   drafts.set(key, { parts, expiresAt: now + 15 * 60_000 })
 }
 export const newExam = createServerFn({ method: 'POST' })
-  .validator(z.object({ part: scope, difficulty: z.enum(['standard', 'challenge']) }))
-  .handler(({ data }) => {
+  .validator(z.object({ part: scope, difficulty: z.enum(['standard', 'challenge']), mode: z.enum(['timed', 'untimed']).default('timed') }))
+  .handler(async ({ data }) => {
     const key = ensureOwner(origin())
-    return streamJob<ExamUpdate, string>(getRequest(), 'Could not generate a test. Please try again.', async (update, signal) => {
+    const provider = await currentProvider()
+    return startJob(key, { kind: 'reading', target: String(data.part === 'all' ? 'all' : data.part + 1), mode: data.mode, provider }, 'Could not generate a test. Please try again.', async (report, signal) => {
+      const update = ({ index, stage }: ExamUpdate) => report(String(index), stage)
       if (process.env.READLINE_AI === 'off') throw new ProviderError('AI generation is switched off.')
       if (generating.has(key) || generating.size >= 2) throw new ProviderError('A test is already generating. Please try again in a moment.')
       generating.add(key)
-      const draftKey = JSON.stringify([key, data.part, data.difficulty])
+      const draftKey = JSON.stringify([key, data.part, data.difficulty, provider])
       const prior = drafts.get(draftKey)
       drafts.delete(draftKey)
       const completed = prior && prior.expiresAt > Date.now() ? prior.parts : new Map<PartIndex, Part>()
@@ -140,7 +130,7 @@ export const newExam = createServerFn({ method: 'POST' })
         const indices: PartIndex[] = data.part === 'all' ? [0, 1, 2, 3] : [data.part]
         const outcomes = await Promise.allSettled(indices.map(async index => {
           if (!completed.has(index)) {
-            const part = await generatePart(index, data.difficulty, store.recentTitles(key, index), signal, stage => update({ index, stage }))
+            const part = await generatePart(index, data.difficulty, store.recentTitles(key, index), signal, stage => update({ index, stage }), provider)
             completed.set(index, part)
           }
           update({ index, stage: 'ready' })
@@ -165,9 +155,10 @@ export const newExam = createServerFn({ method: 'POST' })
 const coaching = new Set<string>()
 export const requestCoaching = createServerFn({ method: 'POST' })
   .validator(id)
-  .handler(({ data }) => {
+  .handler(async ({ data }) => {
     origin()
     const key = requireOwner()
+    const provider = roomForAttempt(key, data)?.provider ?? await currentProvider()
     return streamJob<CoachStage, Coaching>(getRequest(), 'Could not prepare coaching. Please try again.', async (update, signal) => {
       const attempt = store.result(key, data)
       if (!attempt) throw new ProviderError('This completed attempt could not be found.')
@@ -177,7 +168,7 @@ export const requestCoaching = createServerFn({ method: 'POST' })
       coaching.add(data)
       try {
         update('reviewing')
-        const feedback = await generateCoach(attempt, signal, () => update('drafting'))
+        const feedback = await generateCoach(attempt, signal, () => update('drafting'), provider)
         signal.throwIfAborted()
         update('saving')
         store.saveCoaching(key, data, feedback)
@@ -188,7 +179,10 @@ export const requestCoaching = createServerFn({ method: 'POST' })
     })
   })
 
-export const readAiStatus = createServerFn({ method: 'GET' }).handler(() => providerAvailable())
+export const readAiStatus = createServerFn({ method: 'GET' }).handler(async () => {
+  privateRead()
+  return providerAvailable(await currentProvider())
+})
 
 // Writing uses the same private browser record and origin checks as Reading.
 export const readWritingDashboard = createServerFn({ method: 'GET' }).handler(() => {
@@ -201,7 +195,7 @@ export const readWritingSetup = createServerFn({ method: 'GET' })
     privateRead()
     const key = owner()
     const exam = key && data.ready ? writingStore.getWritingExam(key, data.ready) : null
-    return { ai: await providerAvailable(), ready: exam ? { id: exam.id, title: exam.title } : null }
+    return { ai: await providerAvailable(await currentProvider()), ready: exam ? { id: exam.id, title: exam.title } : null }
   })
 export const beginWritingAttempt = createServerFn({ method: 'POST' })
   .validator(z.object({ task: writingScope, timed: z.boolean(), examId: id.optional() }))
@@ -209,7 +203,8 @@ export const beginWritingAttempt = createServerFn({ method: 'POST' })
 export const readWritingAttempt = createServerFn({ method: 'GET' }).validator(id).handler(({ data }) => {
   privateRead()
   const key = owner()
-  return key ? writingStore.getWritingAttempt(key, data) : null
+  const response = key ? writingStore.getWritingAttempt(key, data) : null
+  return response ? { ...response, roomCode: roomForAttempt(key!, data)?.code ?? null } : null
 })
 export const mutateWritingAttempt = createServerFn({ method: 'POST' })
   .validator(z.object({ id, position: z.number().int().min(0).max(1), revision: z.number().int().min(0), action: z.enum(['save', 'next', 'sync']), response: z.string().max(MAX_RESPONSE_LENGTH).optional() }))
@@ -224,38 +219,47 @@ export const readWritingResult = createServerFn({ method: 'GET' }).validator(id)
 })
 export const deleteWritingAttempt = createServerFn({ method: 'POST' }).validator(id).handler(({ data }) => {
   origin()
-  writingStore.deleteWriting(requireOwner(), data)
+  const key = requireOwner()
+  if (!withdrawAttempt(key, data)) writingStore.deleteWriting(key, data)
 })
-export const newWritingExam = createServerFn({ method: 'POST' }).validator(z.object({ task: writingScope })).handler(async ({ data }) => {
-  const key = ensureOwner(origin())
-  if (process.env.READLINE_AI === 'off') return { error: 'AI is switched off for this PipPrep server.' }
-  if (generating.has(key) || generating.size >= 2) return { error: 'A test is already generating. Please try again in a moment.' }
-  generating.add(key)
-  try {
-    const indices: WritingIndex[] = data.task === 'all' ? [0, 1] : [data.task]
-    const tasks = await generateWritingTasks(indices, writingStore.recentWritingTitles(key), getRequest().signal)
-    const exam: WritingExam = { id: crypto.randomUUID(), origin: 'generated', tasks, title: tasks.length === 1 ? tasks[0].title : 'Writing mock · Fresh prompts' }
-    writingStore.saveWritingExam(key, exam)
-    return { id: exam.id }
-  } catch (error) {
-    return { error: error instanceof ProviderError ? error.message : 'PipPrep could not generate writing prompts. Please try again.' }
-  } finally { generating.delete(key) }
+export const readBackgroundJobs = createServerFn({ method: 'GET' }).handler(() => {
+  privateRead()
+  return listJobs(owner())
 })
+export const dismissBackgroundJob = createServerFn({ method: 'POST' }).validator(id).handler(({ data }) => {
+  origin()
+  dismissJob(requireOwner(), data)
+})
+export const newWritingExam = createServerFn({ method: 'POST' })
+  .validator(z.object({ task: writingScope, mode: z.enum(['timed', 'untimed']).default('timed') }))
+  .handler(async ({ data }) => {
+    const key = ensureOwner(origin())
+    const provider = await currentProvider()
+    return startJob(key, { kind: 'writing', target: data.task === 'all' ? 'all' : String(data.task + 1), mode: data.mode, provider }, 'Could not generate writing prompts. Please retry.', async (update, signal) => {
+      if (process.env.READLINE_AI === 'off') throw new ProviderError('AI is switched off for this PipPrep server.')
+      update('prompts', 'Writing prompts')
+      const indices: WritingIndex[] = data.task === 'all' ? [0, 1] : [data.task]
+      const tasks = await generateWritingTasks(indices, writingStore.recentWritingTitles(key), signal, () => update('prompts', 'Checking prompt format'), provider)
+      update('prompts', 'Saving prompts')
+      const exam: WritingExam = { id: crypto.randomUUID(), origin: 'generated', tasks, title: tasks.length === 1 ? tasks[0].title : 'Writing mock · Fresh prompts' }
+      writingStore.saveWritingExam(key, exam)
+      return exam.id
+    })
+  })
 export const requestWritingFeedback = createServerFn({ method: 'POST' }).validator(id).handler(async ({ data }) => {
   origin()
   const key = requireOwner()
-  const attempt = writingStore.writingResult(key, data)
-  if (!attempt) return { error: 'This completed writing attempt could not be found.' }
-  if (attempt.feedback) return { feedback: attempt.feedback }
-  if (!attempt.exam.tasks.some(task => (attempt.responses[task.index] || '').trim())) return { error: 'Both responses are empty. Start another attempt to get writing feedback.' }
-  if (process.env.READLINE_AI === 'off') return { error: 'AI feedback is switched off for this PipPrep server.' }
-  if (coaching.has(data) || coaching.size >= 4) return { error: 'Feedback is already running. Try again in a moment.' }
-  coaching.add(data)
-  try {
-    const feedback = await evaluateWriting(attempt, getRequest().signal)
+  const provider = roomForAttempt(key, data)?.provider ?? await currentProvider()
+  return startJob(key, { kind: 'feedback', target: data, mode: 'untimed', provider }, 'Could not assess your writing. Your responses are saved; please retry.', async (update, signal) => {
+    const attempt = writingStore.writingResult(key, data)
+    if (!attempt) throw new ProviderError('This completed writing attempt could not be found.')
+    if (attempt.feedback) return attempt.feedback
+    if (!attempt.exam.tasks.some(task => (attempt.responses[task.index] || '').trim())) throw new ProviderError('No writing was submitted. Start another attempt to get feedback.')
+    if (process.env.READLINE_AI === 'off') throw new ProviderError('AI feedback is switched off for this PipPrep server.')
+    update('feedback', 'Assessing all four writing dimensions')
+    const feedback = await evaluateWriting(attempt, signal, () => update('feedback', 'Checking evidence and score format'), provider)
+    update('feedback', 'Saving feedback')
     writingStore.saveWritingFeedback(key, data, feedback)
-    return { feedback }
-  } catch (error) {
-    return { error: error instanceof ProviderError ? error.message : 'PipPrep could not assess your writing. Your responses are saved; please retry.' }
-  } finally { coaching.delete(data) }
+    return feedback
+  })
 })

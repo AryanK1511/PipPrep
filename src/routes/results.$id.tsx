@@ -1,21 +1,24 @@
+import { useAiProvider } from '../components/AiProvider'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 import { useEffect, useRef, useState } from 'react'
 import { z } from 'zod'
 import { BackToReading, Shell } from '../components/Shell'
 import { Icon } from '../components/Icon'
 import { JobProgress } from '../components/JobProgress'
+import { RoomStatus } from '../components/RoomStatus'
 import { readJob } from '../lib/progress'
 import type { CoachStage } from '../lib/progress'
 import { Source } from '../components/Source'
 import { PARTS, SKILLS, markAttempt, optionsFor, promptFor, referenceBands } from '../lib/reading'
 import type { Attempt, Coaching, Part } from '../lib/types'
-import { readAiStatus, readResult, requestCoaching } from '../server/actions'
+import { readResult, requestCoaching } from '../server/actions'
+import { readAttemptAiStatus } from '../server/room-actions'
 
 export const Route = createFileRoute('/results/$id')({
   headers: () => ({ 'Cache-Control': 'private, no-store' }),
   loader: async ({ params }) => {
     if (!z.uuid().safeParse(params.id).success) throw notFound()
-    const [attempt, ai] = await Promise.all([readResult({ data: params.id }), readAiStatus()])
+    const [attempt, ai] = await Promise.all([readResult({ data: params.id }), readAttemptAiStatus({ data: params.id })])
     if (!attempt) throw notFound()
     return { attempt, ai }
   },
@@ -37,6 +40,7 @@ function Results({ attempt, ai }: { attempt: Attempt; ai: boolean }) {
     label, count: parts.flatMap(({ items }) => items).filter(item => !item.correct && item.selected !== null && item.question.skill === key).length,
   })).filter(skill => skill.count > 0).sort((a, b) => b.count - a.count)
   return <Shell title="Answer review">
+    <RoomStatus attemptId={attempt.id} />
     <div className="section-heading results-heading"><div><p className="eyebrow">Attempt complete</p><h1>Reading results</h1>
       <p>{attempt.exam.title} · {attempt.timed ? 'Timed' : 'Untimed'} · {duration(attempt.elapsed.reduce((sum, ms) => sum + ms, 0))} used</p></div><BackToReading /></div>
     <div className="result-top">
@@ -92,6 +96,7 @@ const COACH_STEPS = [
 ] as const
 
 function Coach({ attempt, enabled }: { attempt: Attempt; enabled: boolean }) {
+  const { busy: providerBusy } = useAiProvider()
   const [feedback, setFeedback] = useState<Coaching | undefined>(attempt.coach)
   const [busy, setBusy] = useState(enabled && !attempt.coach)
   const [error, setError] = useState('')
@@ -135,7 +140,7 @@ function Coach({ attempt, enabled }: { attempt: Attempt; enabled: boolean }) {
         steps={COACH_STEPS.map((step, i) => ({
           label: step.label, status: i < current ? 'Done' : i === current ? step.active : 'Queued', done: i < current,
         }))} />
-      : enabled ? <><p role="alert">{error}</p><button className="button secondary" onClick={() => void fetchFeedback()}>Retry AI feedback</button></>
-      : <p>A signed-in Codex CLI enables personalised coaching. The answer review is available below.</p>}
+      : enabled ? <><p role="alert">{error}</p><button className="button secondary" disabled={providerBusy} onClick={() => void fetchFeedback()}>Retry AI feedback</button></>
+      : <p>Select a signed-in CLI in the sidebar for personalized coaching. The answer review is available below.</p>}
   </div>
 }

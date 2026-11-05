@@ -7,6 +7,7 @@ import { ThemeToggle } from '../components/ThemeToggle'
 import { Source } from '../components/Source'
 import { Dropdown } from '../components/Dropdown'
 import { Confirm } from '../components/Confirm'
+import { RoomStatus } from '../components/RoomStatus'
 import { PARTS, blankIndices, optionsFor } from '../lib/reading'
 import type { ActiveAttempt, Choice, PartView } from '../lib/types'
 import { deleteSavedAttempt, mutateAttempt, readAttempt } from '../server/actions'
@@ -29,7 +30,7 @@ export const Route = createFileRoute('/attempt/$id')({
 const format = (seconds: number) => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 const remaining = (deadline: number | null, now: number) => deadline === null ? null : Math.max(0, Math.ceil((deadline - now) / 1000))
 
-function Exam({ initial }: { initial: { attempt: ActiveAttempt; serverNow: number } }) {
+function Exam({ initial }: { initial: { attempt: ActiveAttempt; serverNow: number; roomCode: string | null } }) {
   const navigate = Route.useNavigate()
   const [attempt, setAttempt] = useState(initial.attempt)
   const [seconds, setSeconds] = useState(remaining(initial.attempt.deadline, initial.serverNow))
@@ -90,7 +91,8 @@ function Exam({ initial }: { initial: { attempt: ActiveAttempt; serverNow: numbe
   async function discard() {
     try {
       await deleteSavedAttempt({ data: id })
-      await navigate({ to: '/', replace: true })
+      if (initial.roomCode) await navigate({ to: '/rooms/$code', params: { code: initial.roomCode }, replace: true })
+      else await navigate({ to: '/', replace: true })
     } catch {
       setConfirm(null)
       setError('Could not discard this attempt. Please try again.')
@@ -104,6 +106,7 @@ function Exam({ initial }: { initial: { attempt: ActiveAttempt; serverNow: numbe
         <button className="button quiet" onClick={() => setConfirm('exit')}>Exit test</button></div>
     </header>
     <main className="exam-body">
+      <RoomStatus attemptId={id} roomCode={initial.roomCode} active />
       <div className="exam-heading"><div><p className="eyebrow">Part 0{part.index + 1} · {meta.count} questions</p><h1 ref={heading} tabIndex={-1}>{meta.name}</h1></div>
         <div className="steps" aria-label="Test progress">{partIndices.map((partIndex, i) => <span key={partIndex} className={'step ' + (i === position ? 'current' : i < position ? 'finished' : '')} aria-current={i === position ? 'step' : undefined}>{i < position ? <Icon name="check" size={15} /> : partIndex + 1}</span>)}</div>
       </div>
@@ -123,7 +126,7 @@ function Exam({ initial }: { initial: { attempt: ActiveAttempt; serverNow: numbe
       <button className="button dark" onClick={() => { setConfirm(null); void perform('next') }}>{last ? 'Submit test' : 'Continue to next part'}</button>
     </Confirm>}
     {confirm === 'exit' && <Confirm title="Exit to the study room?" text={attempt.timed ? 'Your answers are saved and the clock keeps running.' : 'Your answers are saved for when you return.'} onClose={() => setConfirm(null)}>
-      <button className="button quiet danger" onClick={() => void discard()}>Discard attempt</button><Link className="button dark" to="/">Exit to Reading</Link>
+      <button className="button quiet danger" onClick={() => void discard()}>{initial.roomCode ? 'Leave this test' : 'Discard attempt'}</button>{initial.roomCode ? <Link className="button dark" to="/rooms/$code" params={{ code: initial.roomCode }}>Back to room</Link> : <Link className="button dark" to="/">Exit to Reading</Link>}
     </Confirm>}
   </div>
 }

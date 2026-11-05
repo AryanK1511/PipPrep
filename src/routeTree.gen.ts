@@ -15,6 +15,8 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as AttemptIdRouteImport } from './routes/attempt.$id'
 import { Route as NewPartRouteImport } from './routes/new.$part'
 import { Route as ResultsIdRouteImport } from './routes/results.$id'
+import { Route as RoomsIndexRouteImport } from './routes/rooms.index'
+import { Route as RoomsCodeRouteImport } from './routes/rooms.$code'
 import { Route as WritingIndexRouteImport } from './routes/writing.index'
 import { Route as WritingGuideRouteImport } from './routes/writing.guide'
 import { Route as WritingAttemptIdRouteImport } from './routes/writing.attempt.$id'
@@ -51,6 +53,16 @@ const ResultsIdRoute = ResultsIdRouteImport.update({
   path: '/results/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RoomsIndexRoute = RoomsIndexRouteImport.update({
+  id: '/rooms/',
+  path: '/rooms/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RoomsCodeRoute = RoomsCodeRouteImport.update({
+  id: '/rooms/$code',
+  path: '/rooms/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WritingIndexRoute = WritingIndexRouteImport.update({
   id: '/writing/',
   path: '/writing/',
@@ -84,7 +96,9 @@ export interface FileRoutesByFullPath {
   '/attempt/$id': typeof AttemptIdRoute
   '/new/$part': typeof NewPartRoute
   '/results/$id': typeof ResultsIdRoute
+  '/rooms/$code': typeof RoomsCodeRoute
   '/writing/guide': typeof WritingGuideRoute
+  '/rooms/': typeof RoomsIndexRoute
   '/writing/': typeof WritingIndexRoute
   '/writing/attempt/$id': typeof WritingAttemptIdRoute
   '/writing/new/$task': typeof WritingNewTaskRoute
@@ -97,7 +111,9 @@ export interface FileRoutesByTo {
   '/attempt/$id': typeof AttemptIdRoute
   '/new/$part': typeof NewPartRoute
   '/results/$id': typeof ResultsIdRoute
+  '/rooms/$code': typeof RoomsCodeRoute
   '/writing/guide': typeof WritingGuideRoute
+  '/rooms': typeof RoomsIndexRoute
   '/writing': typeof WritingIndexRoute
   '/writing/attempt/$id': typeof WritingAttemptIdRoute
   '/writing/new/$task': typeof WritingNewTaskRoute
@@ -111,7 +127,9 @@ export interface FileRoutesById {
   '/attempt/$id': typeof AttemptIdRoute
   '/new/$part': typeof NewPartRoute
   '/results/$id': typeof ResultsIdRoute
+  '/rooms/$code': typeof RoomsCodeRoute
   '/writing/guide': typeof WritingGuideRoute
+  '/rooms/': typeof RoomsIndexRoute
   '/writing/': typeof WritingIndexRoute
   '/writing/attempt/$id': typeof WritingAttemptIdRoute
   '/writing/new/$task': typeof WritingNewTaskRoute
@@ -126,7 +144,9 @@ export interface FileRouteTypes {
     | '/attempt/$id'
     | '/new/$part'
     | '/results/$id'
+    | '/rooms/$code'
     | '/writing/guide'
+    | '/rooms/'
     | '/writing/'
     | '/writing/attempt/$id'
     | '/writing/new/$task'
@@ -139,7 +159,9 @@ export interface FileRouteTypes {
     | '/attempt/$id'
     | '/new/$part'
     | '/results/$id'
+    | '/rooms/$code'
     | '/writing/guide'
+    | '/rooms'
     | '/writing'
     | '/writing/attempt/$id'
     | '/writing/new/$task'
@@ -152,7 +174,9 @@ export interface FileRouteTypes {
     | '/attempt/$id'
     | '/new/$part'
     | '/results/$id'
+    | '/rooms/$code'
     | '/writing/guide'
+    | '/rooms/'
     | '/writing/'
     | '/writing/attempt/$id'
     | '/writing/new/$task'
@@ -166,7 +190,9 @@ export interface RootRouteChildren {
   AttemptIdRoute: typeof AttemptIdRoute
   NewPartRoute: typeof NewPartRoute
   ResultsIdRoute: typeof ResultsIdRoute
+  RoomsCodeRoute: typeof RoomsCodeRoute
   WritingGuideRoute: typeof WritingGuideRoute
+  RoomsIndexRoute: typeof RoomsIndexRoute
   WritingIndexRoute: typeof WritingIndexRoute
   WritingAttemptIdRoute: typeof WritingAttemptIdRoute
   WritingNewTaskRoute: typeof WritingNewTaskRoute
@@ -217,6 +243,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResultsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rooms/': {
+      id: '/rooms/'
+      path: '/rooms'
+      fullPath: '/rooms/'
+      preLoaderRoute: typeof RoomsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rooms/$code': {
+      id: '/rooms/$code'
+      path: '/rooms/$code'
+      fullPath: '/rooms/$code'
+      preLoaderRoute: typeof RoomsCodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/writing/': {
       id: '/writing/'
       path: '/writing'
@@ -262,7 +302,9 @@ const rootRouteChildren: RootRouteChildren = {
   AttemptIdRoute: AttemptIdRoute,
   NewPartRoute: NewPartRoute,
   ResultsIdRoute: ResultsIdRoute,
+  RoomsCodeRoute: RoomsCodeRoute,
   WritingGuideRoute: WritingGuideRoute,
+  RoomsIndexRoute: RoomsIndexRoute,
   WritingIndexRoute: WritingIndexRoute,
   WritingAttemptIdRoute: WritingAttemptIdRoute,
   WritingNewTaskRoute: WritingNewTaskRoute,

@@ -12,9 +12,10 @@
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "start": "node .output/server/index.mjs",
+    "host:room": "pnpm build && node scripts/host-room.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test && playwright test --config playwright.providers.config.ts"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.170.46",

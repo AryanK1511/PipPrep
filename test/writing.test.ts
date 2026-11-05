@@ -11,7 +11,7 @@ function feedbackFixture() {
     index: task.index, estimate: { low: 6, high: 8 }, summary: 'Ideas are clear; develop the evidence. The example adds illustrative details.',
     dimensions: (['content', 'vocabulary', 'readability', 'fulfillment'] as const).map(key => ({ key, quote: 'I prefer the garden', observation: 'The main position is clear.', advice: 'Add a concrete supporting detail.' })),
     coverage: task.requirements.map((_, requirement) => ({ requirement, status: 'partial' as const, explanation: 'More detail would help.' })),
-    corrections: [{ original: 'I prefer the garden', replacement: 'I favour the community garden', reason: 'An optional style suggestion.' }],
+    corrections: [{ original: 'I prefer the garden', replacement: 'I favor the community garden', reason: 'An optional style suggestion.' }],
     improvedResponse: response.repeat(10).trim(),
   }))
   return { attempt, feedback: { estimate: { low: 6, high: 8 }, summary: 'Develop concrete reasons.', tasks, actions: [{ title: 'Support each reason', advice: 'Give a specific example for each main point.' }] } }

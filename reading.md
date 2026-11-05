@@ -19,4 +19,4 @@ Reading is computer-scored. Each correct response earns one point, and wrong or 
 
 Every practice part has a fixed key, an explanation per question, and supporting quotes. For an E answer in Part 3, the explanation identifies what the claim adds beyond the closest related passage. The generator is prompted to solve and check each item before returning it. PipPrep validates the part structure, blank placement, option counts, and exact source evidence before a generated test opens. These checks catch malformed items and fabricated quotes. Generated item difficulty and answer quality can still vary.
 
-AI coaching uses the scored choices, missed skills, unanswered questions, and pacing to suggest what to practise next. The review shows the original source and every correct answer even if the coaching request fails.
+AI coaching uses the scored choices, missed skills, unanswered questions, and pacing to suggest what to practice next. The review shows the original source and every correct answer even if the coaching request fails.

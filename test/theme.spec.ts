@@ -31,7 +31,7 @@ test('mobile practice supports both themes without losing answers and keeps dark
   await page.goto('/')
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light')
   await page.getByRole('button', { name: 'Switch to dark theme' }).click()
-  await page.getByRole('link', { name: 'Practise Reading to Apply a Diagram' }).click()
+  await page.getByRole('link', { name: 'Practice Reading to Apply a Diagram' }).click()
   await page.getByRole('button', { name: 'Begin test' }).click()
   await expect(page.locator('.flyer')).toHaveCSS('background-color', 'rgb(48, 38, 30)')
   const answer = page.getByRole('combobox', { name: 'Question 1', exact: true })

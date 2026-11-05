@@ -4,9 +4,11 @@ import { z } from 'zod'
 import { Brand } from '../components/Shell'
 import { Icon } from '../components/Icon'
 import { Confirm } from '../components/Confirm'
+import { RoomStatus } from '../components/RoomStatus'
 import { WritingPrompt } from '../components/WritingPrompt'
 import { MAX_RESPONSE_LENGTH, wordCount, WRITING_TASKS } from '../lib/writing'
 import type { ActiveWritingAttempt } from '../lib/writing'
+import { readWritingBackup } from '../lib/writing-backup'
 import { deleteWritingAttempt, mutateWritingAttempt, readWritingAttempt } from '../server/actions'
 
 export const Route = createFileRoute('/writing/attempt/$id')({
@@ -25,13 +27,13 @@ export const Route = createFileRoute('/writing/attempt/$id')({
 })
 function WritingExam({ initial }: { initial: ActiveResponse }) {
   const [loaded, setLoaded] = useState(initial)
-  return <Editor key={loaded.attempt.id + ':' + loaded.attempt.position} initial={loaded.attempt} serverNow={loaded.serverNow} update={setLoaded} />
+  return <Editor key={loaded.attempt.id + ':' + loaded.attempt.position} initial={loaded.attempt} serverNow={loaded.serverNow} update={setLoaded} roomCode={initial.roomCode} />
 }
-type ActiveResponse = { finished: false; attempt: ActiveWritingAttempt; serverNow: number; conflict: boolean }
+type ActiveResponse = { finished: false; attempt: ActiveWritingAttempt; serverNow: number; conflict: boolean; roomCode?: string | null }
 const remaining = (deadline: number | null, now: number) => deadline === null ? null : Math.max(0, Math.ceil((deadline - now) / 1000))
 const format = (seconds: number) => `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 
-function Editor({ initial, serverNow, update }: { initial: ActiveWritingAttempt; serverNow: number; update: (value: ActiveResponse) => void }) {
+function Editor({ initial, serverNow, update, roomCode }: { initial: ActiveWritingAttempt; serverNow: number; update: (value: ActiveResponse) => void; roomCode?: string | null }) {
   const navigate = Route.useNavigate()
   const { id, task, position, deadline, taskIndices } = initial
   const [response, setResponse] = useState(initial.responses[task.index] || '')
@@ -57,19 +59,19 @@ function Editor({ initial, serverNow, update }: { initial: ActiveWritingAttempt;
 
   const backup = useCallback(() => {
     try {
-      if (latest.current === saved.current) localStorage.removeItem(backupKey)
-      else localStorage.setItem(backupKey, JSON.stringify({ response: latest.current, revision: revision.current }))
+      if (latest.current === saved.current) sessionStorage.removeItem(backupKey)
+      else sessionStorage.setItem(backupKey, JSON.stringify({ response: latest.current, revision: revision.current }))
     } catch { setBackupWarning('Browser backup is unavailable. Wait for “Saved” before leaving this page.') }
   }, [backupKey])
 
   useEffect(() => {
     heading.current?.focus({ preventScroll: true })
     try {
-      const raw = localStorage.getItem(backupKey)
+      const raw = readWritingBackup(backupKey)
       if (!raw) return
       const draft = JSON.parse(raw)
       if (typeof draft.response !== 'string' || draft.response.length > MAX_RESPONSE_LENGTH) return
-      if (draft.response === saved.current) { localStorage.removeItem(backupKey); return }
+      if (draft.response === saved.current) { sessionStorage.removeItem(backupKey); return }
       if (draft.revision === revision.current) {
         latest.current = draft.response; setResponse(draft.response)
       } else setRecovered(draft.response)
@@ -131,7 +133,10 @@ function Editor({ initial, serverNow, update }: { initial: ActiveWritingAttempt;
   async function leave() {
     setMoving(true)
     const ok = await perform('save')
-    if (ok) await navigate({ to: '/writing' })
+    if (ok) {
+      if (roomCode) await navigate({ to: '/rooms/$code', params: { code: roomCode } })
+      else await navigate({ to: '/writing' })
+    }
     setMoving(false)
   }
   async function discard() {
@@ -139,8 +144,11 @@ function Editor({ initial, serverNow, update }: { initial: ActiveWritingAttempt;
     await chain.current
     try {
       await deleteWritingAttempt({ data: id })
-      for (const index of taskIndices) localStorage.removeItem(`readline-writing:${id}:${index}`)
-      await navigate({ to: '/writing', replace: true })
+      try {
+        for (const index of taskIndices) sessionStorage.removeItem(`readline-writing:${id}:${index}`)
+      } catch { /* A deleted attempt must still close when browser storage is blocked. */ }
+      if (roomCode) await navigate({ to: '/rooms/$code', params: { code: roomCode }, replace: true })
+      else await navigate({ to: '/writing', replace: true })
     } catch { setError('Could not discard this attempt. Please retry.'); setMoving(false); setConfirm(null) }
   }
   function change(text: string) { latest.current = text; setResponse(text); backup() }
@@ -153,19 +161,19 @@ function Editor({ initial, serverNow, update }: { initial: ActiveWritingAttempt;
     <header className="exam-top"><div className="exam-identity"><Brand /><span className="exam-divider" /><span>Writing practice</span></div>
       <div className="exam-tools"><div className={'timer' + (seconds !== null && seconds <= 60 ? ' low' : '')}><Icon name="clock" size={18} /><span role="timer" aria-label="Time remaining">{seconds === null ? 'Untimed' : format(seconds)}</span></div><button className="button quiet" disabled={moving} onClick={() => setConfirm('exit')}>Exit test</button></div>
     </header>
-    <main className="exam-body"><div className="exam-heading"><div><p className="eyebrow">Task 0{task.index + 1} · about 150–200 words</p><h1 ref={heading} tabIndex={-1}>{WRITING_TASKS[task.index].name}</h1></div>
+    <main className="exam-body"><RoomStatus attemptId={id} roomCode={roomCode} active onReturn={() => void leave()} /><div className="exam-heading"><div><p className="eyebrow">Task 0{task.index + 1} · about 150–200 words</p><h1 ref={heading} tabIndex={-1}>{WRITING_TASKS[task.index].name}</h1></div>
       <div className="steps" aria-label="Writing progress">{taskIndices.map((index, i) => <span key={index} className={'step ' + (position === i ? 'current' : i < position ? 'finished' : '')} aria-current={position === i ? 'step' : undefined}>{index + 1}</span>)}</div></div>
       {error && <div role="alert" className="inline-error">{error} {conflict ? <button className="button secondary" onClick={() => { backup(); window.location.reload() }}>Load saved response</button> : <button className="button secondary" onClick={() => void perform(seconds === 0 ? 'sync' : 'save')}>Retry save</button>}</div>}
       {backupWarning && <p role="alert" className="inline-error">{backupWarning}</p>}
       {recovered && <details className="recovered-draft"><summary>Unsaved text from an earlier browser draft</summary><p>Compare this text with your saved response before copying any edits back into the editor.</p><textarea aria-label="Recovered browser draft" value={recovered} readOnly /></details>}
       <div className="exam-panes"><section className="pane" aria-labelledby="writing-task-label"><h2 className="pane-label" id="writing-task-label"><Icon name="mail" size={17} />Your task</h2><div className="pane-scroll" role="region" aria-label="Writing prompt" tabIndex={0}><WritingPrompt task={task} /></div></section>
         <section className="pane writing-editor-pane" aria-labelledby="writing-response-label"><label className="pane-label" id="writing-response-label" htmlFor="writing-response"><Icon name="pen" size={17} />Your response</label>
-          <textarea id="writing-response" className="writing-editor" lang="en-CA" spellCheck autoCapitalize="sentences" autoCorrect="off" autoComplete="off" placeholder={task.index === 0 ? 'Write your email here…' : 'State your choice and explain your reasons…'} value={response} maxLength={MAX_RESPONSE_LENGTH} disabled={moving || seconds === 0} onChange={event => change(event.target.value)} onBlur={() => { if (seconds !== 0) void perform('save') }} aria-describedby="writing-word-count" />
+          <textarea id="writing-response" className="writing-editor" lang="en-US" spellCheck autoCapitalize="sentences" autoCorrect="off" autoComplete="off" placeholder={task.index === 0 ? 'Write your email here…' : 'State your choice and explain your reasons…'} value={response} maxLength={MAX_RESPONSE_LENGTH} disabled={moving || seconds === 0} onChange={event => change(event.target.value)} onBlur={() => { if (seconds !== 0) void perform('save') }} aria-describedby="writing-word-count" />
           <div className="editor-meta"><span id="writing-word-count"><strong>{words} words</strong> · target 150–200</span><span role="status" aria-label="Save status">{conflict ? 'Save conflict' : error ? 'Not saved' : saving ? 'Saving…' : response !== saved.current ? 'Unsaved changes' : 'Saved'}</span></div>
         </section></div>
     </main>
     <footer className="exam-foot"><span>Browser spellcheck · {response.length === MAX_RESPONSE_LENGTH ? 'Character limit reached' : 'Plan, write, then proofread'}</span><button className="button dark" disabled={moving || conflict || seconds === 0} onClick={() => setConfirm('next')}>{last ? 'Finish writing' : 'Next task'}<Icon name="arrow" size={17} /></button></footer>
     {confirm === 'next' && <Confirm title={last ? 'Submit your writing?' : 'Move to the survey?'} text={`${words} words. ${last ? 'Your responses will be locked for review.' : 'Your email will be locked. Unused time does not carry over.'}`} onClose={() => setConfirm(null)}><button className="button dark" disabled={moving} onClick={() => void next()}>{last ? 'Submit writing' : 'Continue to next task'}</button></Confirm>}
-    {confirm === 'exit' && <Confirm title="Exit to the study room?" text={initial.timed ? 'The clock keeps running while you are away.' : 'Your response will be saved before you leave.'} onClose={() => setConfirm(null)}><button className="button quiet danger" disabled={moving} onClick={() => void discard()}>Discard attempt</button><button className="button dark" disabled={moving} onClick={() => void leave()}>Save and exit</button></Confirm>}
+    {confirm === 'exit' && <Confirm title="Exit to the study room?" text={initial.timed ? 'The clock keeps running while you are away.' : 'Your response will be saved before you leave.'} onClose={() => setConfirm(null)}><button className="button quiet danger" disabled={moving} onClick={() => void discard()}>{roomCode ? 'Leave this test' : 'Discard attempt'}</button><button className="button dark" disabled={moving} onClick={() => void leave()}>Save and exit</button></Confirm>}
   </div>
 }

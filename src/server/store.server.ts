@@ -198,3 +198,23 @@ export function saveCoaching(owner: string, id: string, feedback: Coaching) {
 export function deleteAttempt(owner: string, id: string) {
   db().prepare('DELETE FROM attempts WHERE id = ? AND owner = ?').run(id, owner)
 }
+
+// Room operations call these inside their own transaction so every participant
+// starts together, or nobody starts if one participant already has an attempt.
+export function insertSharedAttempt(owner: string, exam: Exam, timed: boolean, now: number) {
+  if (currentAttempt(owner)) throw new Error('Finish or discard your active Reading attempt first.')
+  const attempt = startAttempt(exam, timed, now, randomUUID())
+  db().prepare('INSERT INTO attempts (id, owner, state, started_at) VALUES (?, ?, ?, ?)').run(attempt.id, owner, JSON.stringify(attempt), now)
+  return attempt.id
+}
+
+export function sharedAttempt(owner: string, id: string, stop = false) {
+  const attempt = get(owner, id)
+  if (!attempt) return null
+  let current = refresh(owner, attempt)
+  if (stop) {
+    while (!current.finishedAt) current = advance(current)
+    persist(owner, current)
+  }
+  return current
+}

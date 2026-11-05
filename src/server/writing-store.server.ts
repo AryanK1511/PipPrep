@@ -33,7 +33,13 @@ export function writingDashboard(owner?: string) {
   return transaction(() => {
     const current = active(owner)
     const entries = (db().prepare('SELECT state, feedback FROM writing_attempts WHERE owner = ? AND finished_at IS NOT NULL ORDER BY finished_at DESC, id').all(owner) as Row[])
-      .map(row => { const attempt = unpack(row); return { id: attempt.id, title: attempt.exam.title, timed: attempt.timed, finishedAt: attempt.finishedAt!, estimate: attempt.feedback?.estimate ?? null, reviewed: !!attempt.feedback, taskCount: attempt.exam.tasks.length } })
+      .map(row => {
+        const attempt = unpack(row)
+        const estimate = attempt.exam.tasks.length === 1
+          ? attempt.feedback?.tasks.find(task => task.index === attempt.exam.tasks[0].index)?.estimate
+          : attempt.feedback?.estimate
+        return { id: attempt.id, title: attempt.exam.title, timed: attempt.timed, finishedAt: attempt.finishedAt!, estimate: estimate ?? null, reviewed: !!attempt.feedback, taskCount: attempt.exam.tasks.length }
+      })
     return { active: current ? { id: current.id, title: current.exam.title } : null, entries }
   })
 }
@@ -102,4 +108,22 @@ export function saveWritingFeedback(owner: string, id: string, feedback: Writing
 }
 export function deleteWriting(owner: string, id: string) {
   db().prepare('DELETE FROM writing_attempts WHERE owner = ? AND id = ?').run(owner, id)
+}
+
+export function insertSharedWriting(owner: string, exam: WritingExam, timed: boolean, now: number) {
+  if (active(owner)) throw new Error('Finish or discard your active Writing attempt first.')
+  const attempt = startWriting(exam, timed, now, randomUUID())
+  db().prepare('INSERT INTO writing_attempts (id, owner, state, started_at) VALUES (?, ?, ?, ?)').run(attempt.id, owner, JSON.stringify(attempt), now)
+  return attempt.id
+}
+
+export function sharedWritingAttempt(owner: string, id: string, stop = false) {
+  const attempt = get(owner, id)
+  if (!attempt) return null
+  let current = refresh(owner, attempt)
+  if (stop) {
+    while (current.finishedAt === undefined) current = advanceWriting(current)
+    persist(owner, current)
+  }
+  return current
 }

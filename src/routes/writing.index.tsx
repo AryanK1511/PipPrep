@@ -21,8 +21,8 @@ function WritingHome() {
       <div className="stat"><span className="icon-tile"><Icon name="pen" /></span><div><span className="stat-label">Each response</span><strong>150–200</strong><small>Words, approximately</small></div></div>
       <div className="stat"><span className="icon-tile"><Icon name="chart" /></span><div><span className="stat-label">Completed attempts</span><strong>{entries.length}</strong><small>Responses and feedback saved</small></div></div>
     </div>
-    <section><div className="section-heading"><div><h2>Practise by task</h2><p>Develop one format at a time.</p></div><Link to="/writing/guide" className="button quiet">Writing guide<Icon name="arrow" size={17} /></Link></div>
-      <div className="part-grid writing-task-grid">{WRITING_TASKS.map((task, index) => <Link to="/writing/new/$task" params={{ task: String(index + 1) }} key={task.name} className="part-card" aria-label={'Practise ' + task.name}>
+    <section><div className="section-heading"><div><h2>Practice by task</h2><p>Develop one format at a time.</p></div><Link to="/writing/guide" className="button quiet">Writing guide<Icon name="arrow" size={17} /></Link></div>
+      <div className="part-grid writing-task-grid">{WRITING_TASKS.map((task, index) => <Link to="/writing/new/$task" params={{ task: String(index + 1) }} key={task.name} className="part-card" aria-label={'Practice ' + task.name}>
         <span className="part-card-top"><span className="icon-tile"><Icon name={index === 0 ? 'mail' : 'comment'} /></span><span className="part-number">Task 0{index + 1}</span></span>
         <strong>{task.name}</strong><span className="part-description">{task.description}</span><span className="part-card-foot">150–200 words · {task.minutes} min<Icon name="arrow" size={18} /></span>
       </Link>)}</div>
