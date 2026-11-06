@@ -45,7 +45,9 @@ Install and authenticate the [ngrok agent](https://ngrok.com/docs/getting-starte
 pnpm host:room
 ```
 
-This builds PipPrep, starts an ngrok tunnel with request inspection disabled, and runs the built server on `127.0.0.1:4175` with the public origin configured. Open the local `/rooms` address printed in the terminal, create a room, and copy its public invite link. Stop any existing server on that port first, or choose another with `PORT=4176 pnpm host:room`. Press Ctrl+C to stop both the tunnel and server. Friends only need a browser. The host's computer must stay awake and online. ngrok account limits apply.
+This builds PipPrep, starts an ngrok tunnel with request inspection disabled, and runs the built server on `127.0.0.1:4176` with the public origin configured. The separate port lets the development app keep running on 4175 without sending development requests to the built server. Open the local `/rooms` address printed in the terminal in a new tab, create a room, and copy its public invite link. Choose another port with `PORT=4177 pnpm host:room`. Press Ctrl+C to stop both the tunnel and server. Friends only need a browser. The host's computer must stay awake and online. ngrok account limits apply.
+
+If you switch development and production servers at the same address, fully reload any tabs already open there. PipPrep detects app version changes and offers a reload without automatically replacing unsaved writing. To reopen a room previously created on port 4175, keep using that address with `PORT=4175 pnpm host:room` after stopping the development server.
 
 To use a tunnel you already started, build the app and set the public origin explicitly:
 

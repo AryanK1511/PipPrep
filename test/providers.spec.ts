@@ -171,8 +171,8 @@ async function startSharedTest(host: Page, guest: Page) {
   await guest.getByRole('button', { name: 'I’m ready', exact: true }).click()
   await expect(host.getByRole('button', { name: 'Start for everyone' })).toBeEnabled()
   await host.getByRole('button', { name: 'Start for everyone' }).click()
-  await guest.getByRole('link', { name: 'Open my test', exact: true }).click()
-  await host.getByRole('link', { name: 'Open my test', exact: true }).click()
+  await expect(guest).toHaveURL(/\/attempt\//)
+  await expect(host).toHaveURL(/\/attempt\//)
 }
 test('room generation creates one shared full Reading exam on the host provider and failure can be retried', async ({ page, browser }) => {
   const guest = await browser.newPage()

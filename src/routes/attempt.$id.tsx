@@ -106,7 +106,7 @@ function Exam({ initial }: { initial: { attempt: ActiveAttempt; serverNow: numbe
         <button className="button quiet" onClick={() => setConfirm('exit')}>Exit test</button></div>
     </header>
     <main className="exam-body">
-      <RoomStatus attemptId={id} roomCode={initial.roomCode} active />
+      <RoomStatus attemptId={id} roomCode={initial.roomCode} active onReturn={() => setConfirm('exit')} />
       <div className="exam-heading"><div><p className="eyebrow">Part 0{part.index + 1} · {meta.count} questions</p><h1 ref={heading} tabIndex={-1}>{meta.name}</h1></div>
         <div className="steps" aria-label="Test progress">{partIndices.map((partIndex, i) => <span key={partIndex} className={'step ' + (i === position ? 'current' : i < position ? 'finished' : '')} aria-current={i === position ? 'step' : undefined}>{i < position ? <Icon name="check" size={15} /> : partIndex + 1}</span>)}</div>
       </div>

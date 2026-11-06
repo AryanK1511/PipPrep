@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { BackgroundJobsProvider } from '../components/BackgroundJobs'
 import stylesUrl from '../styles.css?url'
 import { themeScript } from '../components/ThemeToggle'
+import { AppUpdateNotice } from '../components/AppUpdateNotice'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -17,6 +18,6 @@ export const Route = createRootRoute({
 function Document({ children }: { children: ReactNode }) {
   return <html lang="en-US" suppressHydrationWarning>
     <head><script dangerouslySetInnerHTML={{ __html: themeScript }} /><HeadContent /></head>
-    <body>{children}<Scripts /></body>
+    <body><AppUpdateNotice />{children}<Scripts /></body>
   </html>
 }

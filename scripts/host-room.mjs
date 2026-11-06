@@ -2,7 +2,7 @@ import { spawn } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import { createServer } from 'node:net'
 
-const port = Number(process.env.PORT || 4175)
+const port = Number(process.env.PORT || 4176)
 if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('PORT must be a number between 1 and 65535.')
 let tunnel
 let server
@@ -53,6 +53,7 @@ try {
     server.once('exit', code => stop(code || 0))
     console.log(`\nHost your room at http://127.0.0.1:${port}/rooms`)
     console.log(`Friends connect at ${url}/rooms`)
+    console.log('Open the host address in a new tab, or reload it if it was already open.')
     console.log('Create a room, then copy its invite link. Keep this terminal open. Press Ctrl+C to stop.\n')
   }
 } catch (error) {
